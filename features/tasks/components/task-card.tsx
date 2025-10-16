@@ -66,7 +66,7 @@ function EditableDescription({
                     value={localValue}
                     onChange={(e) => setLocalValue(e.target.value)}
                     placeholder="Add a description..."
-                    className="min-h-[150px] sm:min-h-[200px] resize-none text-sm"
+                    className="min-h-[120px] sm:min-h-[150px] md:min-h-[200px] resize-none text-sm md:text-base"
                     autoFocus
                     onKeyDown={(e) => {
                         if (e.key === "Escape") {
@@ -74,14 +74,14 @@ function EditableDescription({
                         }
                     }}
                 />
-                <div className="flex items-center gap-2">
-                    <Button size="sm" onClick={handleSave}>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Button size="sm" onClick={handleSave} className="h-9">
                         Save
                     </Button>
-                    <Button size="sm" variant="outline" onClick={handleCancel}>
+                    <Button size="sm" variant="outline" onClick={handleCancel} className="h-9">
                         Cancel
                     </Button>
-                    <span className="text-xs text-muted-foreground ml-2">
+                    <span className="hidden sm:inline text-xs text-muted-foreground ml-2">
                         ESC to cancel
                     </span>
                 </div>
@@ -93,7 +93,7 @@ function EditableDescription({
         return (
             <button
                 onClick={() => setIsEditing(true)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left w-full p-2 rounded-md hover:bg-muted/50"
+                className="text-sm md:text-base text-muted-foreground hover:text-foreground transition-colors text-left w-full p-3 rounded-md hover:bg-muted/50 min-h-[44px] flex items-center"
             >
                 Click to add a description...
             </button>
@@ -103,24 +103,24 @@ function EditableDescription({
     return (
         <div
             onClick={() => setIsEditing(true)}
-            className="cursor-pointer p-2 -m-2 rounded-md hover:bg-muted/50 transition-colors"
+            className="cursor-pointer p-3 -m-3 rounded-md hover:bg-muted/50 transition-colors min-h-[44px]"
         >
-            <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none">
+            <div className="prose prose-sm md:prose-base prose-neutral dark:prose-invert max-w-none">
                 <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
                         p: ({ children }) => (
-                            <p className="text-sm leading-relaxed text-foreground/90 mb-3 last:mb-0">
+                            <p className="text-sm md:text-base leading-relaxed text-foreground/90 mb-3 last:mb-0">
                                 {children}
                             </p>
                         ),
                         h1: ({ children }) => (
-                            <h1 className="text-lg font-bold mb-3 text-foreground">
+                            <h1 className="text-base md:text-lg font-bold mb-3 text-foreground">
                                 {children}
                             </h1>
                         ),
                         h2: ({ children }) => (
-                            <h2 className="text-base font-bold mb-2 text-foreground">
+                            <h2 className="text-sm md:text-base font-bold mb-2 text-foreground">
                                 {children}
                             </h2>
                         ),
@@ -130,12 +130,12 @@ function EditableDescription({
                             </h3>
                         ),
                         ul: ({ children }) => (
-                            <ul className="list-disc list-inside space-y-1 mb-3 text-sm">
+                            <ul className="list-disc list-inside space-y-1 mb-3 text-sm md:text-base">
                                 {children}
                             </ul>
                         ),
                         ol: ({ children }) => (
-                            <ol className="list-decimal list-inside space-y-1 mb-3 text-sm">
+                            <ol className="list-decimal list-inside space-y-1 mb-3 text-sm md:text-base">
                                 {children}
                             </ol>
                         ),
@@ -143,18 +143,18 @@ function EditableDescription({
                             <li className="text-foreground/90">{children}</li>
                         ),
                         blockquote: ({ children }) => (
-                            <blockquote className="border-l-4 border-primary/30 pl-4 italic text-muted-foreground my-3">
+                            <blockquote className="border-l-4 border-primary/30 pl-3 md:pl-4 italic text-muted-foreground my-3">
                                 {children}
                             </blockquote>
                         ),
                         code: ({ children, className }) => {
                             const isInline = !className;
                             return isInline ? (
-                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs text-foreground">
+                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs md:text-sm text-foreground">
                                     {children}
                                 </code>
                             ) : (
-                                <code className="block bg-muted p-3 rounded-lg text-xs overflow-x-auto">
+                                <code className="block bg-muted p-2 md:p-3 rounded-lg text-xs md:text-sm overflow-x-auto">
                                     {children}
                                 </code>
                             );
@@ -172,12 +172,11 @@ function EditableDescription({
                                 href={href}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-primary hover:underline"
+                                className="text-primary hover:underline break-words"
                             >
                                 {children}
                             </a>
                         ),
-
                     }}
                 >
                     {value}
@@ -256,7 +255,7 @@ export function TaskCard({
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
             <SheetContent
-                className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col"
+                className="w-full sm:max-w-xl md:max-w-2xl p-0 overflow-hidden flex flex-col"
                 side="right"
             >
                 {/* Accessible Title (Hidden) */}
@@ -267,12 +266,12 @@ export function TaskCard({
                 </VisuallyHidden>
 
                 {/* Header */}
-                <div className="flex items-start gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b">
+                <div className="flex items-start gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5 border-b">
                     <div className="flex-shrink-0 pt-1">
                         {task.done ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                            <CheckCircle2 className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                         ) : (
-                            <Circle className="h-5 w-5 text-muted-foreground" />
+                            <Circle className="h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground" />
                         )}
                     </div>
 
@@ -281,7 +280,7 @@ export function TaskCard({
                             value={editTitle}
                             onChange={(e) => setEditTitle(e.target.value)}
                             placeholder="Task title"
-                            className="text-lg sm:text-xl font-semibold border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-auto"
+                            className="text-base sm:text-lg md:text-xl font-semibold border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-auto min-h-[44px]"
                         />
                         {task.done && (
                             <Badge variant="secondary" className="text-xs">
@@ -292,10 +291,10 @@ export function TaskCard({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-6">
+                <div className="flex-1 overflow-y-auto px-4 sm:px-5 md:px-6 py-4 sm:py-5 space-y-5 sm:space-y-6">
                     {/* Date & Time Section */}
                     <div className="space-y-3">
-                        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <h2 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                             Due Date
                         </h2>
                         <Popover>
@@ -303,14 +302,21 @@ export function TaskCard({
                                 <Button
                                     variant="outline"
                                     className={cn(
-                                        "w-full justify-start text-left font-normal text-sm",
+                                        "w-full justify-start text-left font-normal text-sm sm:text-base h-11 sm:h-12",
                                         !editDueDate && "text-muted-foreground"
                                     )}
                                 >
-                                    <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                                    <CalendarIcon className="mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                                     <span className="truncate">
                                         {editDueDate ? (
-                                            format(editDueDate, "PPP 'at' p")
+                                            <>
+                                                <span className="hidden sm:inline">
+                                                    {format(editDueDate, "PPP 'at' p")}
+                                                </span>
+                                                <span className="sm:hidden">
+                                                    {format(editDueDate, "PP 'at' p")}
+                                                </span>
+                                            </>
                                         ) : (
                                             "Pick a date"
                                         )}
@@ -339,7 +345,7 @@ export function TaskCard({
                                             );
                                             setEditDueDate(new Date(newDate));
                                         }}
-                                        className="w-full"
+                                        className="w-full h-11"
                                     />
                                 </div>
                             </PopoverContent>
@@ -350,7 +356,7 @@ export function TaskCard({
 
                     {/* Description Section with Click to Edit */}
                     <div className="space-y-3">
-                        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <h2 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
                             Description
                         </h2>
                         <EditableDescription
@@ -361,13 +367,13 @@ export function TaskCard({
                 </div>
 
                 {/* Footer Actions */}
-                <div className="border-t px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 justify-between bg-background">
+                <div className="border-t px-4 sm:px-5 md:px-6 py-3 sm:py-4 flex items-center gap-2 justify-between bg-background">
                     {onDelete && (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => onDelete(task.id)}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10 h-10 sm:h-11"
                         >
                             <Trash2 className="h-4 w-4 sm:mr-2" />
                             <span className="hidden sm:inline">Delete</span>
@@ -380,7 +386,7 @@ export function TaskCard({
                                 size="sm"
                                 onClick={handleSave}
                                 disabled={isSaving || !editTitle.trim()}
-                                className="ml-auto"
+                                className="h-10 sm:h-11 px-4 sm:px-6"
                             >
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </Button>

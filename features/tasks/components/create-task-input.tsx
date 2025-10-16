@@ -23,7 +23,6 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
-    // Controlled popover states
     const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
     const [isDescriptionPopoverOpen, setIsDescriptionPopoverOpen] = useState(false);
 
@@ -89,13 +88,13 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
     return (
         <div
             className={cn(
-                "w-full rounded-xl border bg-white transition-all",
-                isFocused ? "border-neutral-900 ring-2 ring-neutral-900/5" : "border-neutral-200"
+                "w-full rounded-xl border bg-card transition-all",
+                isFocused ? "border-ring ring-2 ring-ring/5" : "border-border"
             )}
         >
             {/* Title Input Row */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-neutral-100">
-                <Plus className="w-4 h-4 text-neutral-400 flex-shrink-0" />
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+                <Plus className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 <input
                     ref={inputRef}
                     type="text"
@@ -106,18 +105,18 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                     onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                     placeholder="What needs to be done?"
                     disabled={isLoading}
-                    className="flex-1 text-sm font-medium text-neutral-900 placeholder:text-neutral-400 bg-transparent focus:outline-none disabled:opacity-50"
+                    className="flex-1 text-sm font-medium text-foreground placeholder:text-muted-foreground bg-transparent focus:outline-none disabled:opacity-50"
                 />
             </div>
 
             {/* Metadata & Actions Row */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-neutral-50/50">
+            <div className="flex items-center justify-between px-4 py-2.5 bg-muted/50">
                 {/* Left Actions */}
                 <div className="flex items-center gap-1">
                     {/* Date Picker Button */}
                     <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
                         <PopoverTrigger asChild>
-                            <button className="h-7 px-2.5 flex items-center gap-1.5 text-neutral-600 hover:bg-white hover:text-neutral-900 rounded-md text-xs font-medium transition-colors">
+                            <button className="h-7 px-2.5 flex items-center gap-1.5 text-muted-foreground hover:bg-card hover:text-foreground rounded-md text-xs font-medium transition-colors">
                                 <CalendarIcon className="w-3.5 h-3.5" />
                                 {dueDate ? format(dueDate, "MMM d") : "Date"}
                             </button>
@@ -134,7 +133,7 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                         >
                             <div className="flex flex-col">
                                 {/* Quick Date Options */}
-                                <div className="flex gap-1 p-2 border-b">
+                                <div className="flex gap-1 p-2 border-b border-border">
                                     {quickDateOptions.map((option) => (
                                         <Button
                                             key={option.label}
@@ -166,7 +165,7 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                                 />
                                 {/* Time Picker */}
                                 {dueDate && (
-                                    <div className="p-3 border-t space-y-2">
+                                    <div className="p-3 border-t border-border space-y-2">
                                         <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                                             <Clock className="h-3 w-3" />
                                             Time
@@ -180,12 +179,12 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                                                 newDate.setHours(parseInt(hours), parseInt(minutes));
                                                 setDueDate(newDate);
                                             }}
-                                            className="w-full px-3 py-1.5 text-sm border rounded-md"
+                                            className="w-full px-3 py-1.5 text-sm border border-input rounded-md bg-background"
                                         />
                                     </div>
                                 )}
                                 {/* Done Button */}
-                                <div className="p-2 border-t flex justify-end">
+                                <div className="p-2 border-t border-border flex justify-end">
                                     <Button
                                         size="sm"
                                         variant="ghost"
@@ -202,7 +201,7 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                     {/* Description Button */}
                     <Popover open={isDescriptionPopoverOpen} onOpenChange={setIsDescriptionPopoverOpen}>
                         <PopoverTrigger asChild>
-                            <button className="h-7 px-2.5 flex items-center gap-1.5 text-neutral-600 hover:bg-white hover:text-neutral-900 rounded-md text-xs font-medium transition-colors">
+                            <button className="h-7 px-2.5 flex items-center gap-1.5 text-muted-foreground hover:bg-card hover:text-foreground rounded-md text-xs font-medium transition-colors">
                                 <FileText className="w-3.5 h-3.5" />
                                 Note
                             </button>
@@ -218,7 +217,7 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                             }}
                         >
                             <div className="space-y-3">
-                                <label className="text-sm font-medium">Description</label>
+                                <label className="text-sm font-medium text-foreground">Description</label>
                                 <Textarea
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
@@ -243,7 +242,7 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                     </Popover>
 
                     {/* AI Refine Button */}
-                    <button className="h-7 px-2.5 flex items-center gap-1.5 text-neutral-600 hover:bg-white hover:text-neutral-900 rounded-md text-xs font-medium transition-colors">
+                    <button className="h-7 px-2.5 flex items-center gap-1.5 text-muted-foreground hover:bg-card hover:text-foreground rounded-md text-xs font-medium transition-colors">
                         <Lightbulb className="w-3.5 h-3.5" />
                         AI
                     </button>
@@ -252,11 +251,11 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                 {/* Right Actions */}
                 <div className="flex items-center gap-2">
                     {/* Keyboard Hint */}
-                    <div className="flex items-center gap-1.5 text-[11px] text-neutral-400">
-                        <kbd className="px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-medium">
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                        <kbd className="px-1.5 py-0.5 bg-card border border-border rounded text-[10px] font-medium">
                             ⌘
                         </kbd>
-                        <kbd className="px-1.5 py-0.5 bg-white border border-neutral-200 rounded text-[10px] font-medium">
+                        <kbd className="px-1.5 py-0.5 bg-card border border-border rounded text-[10px] font-medium">
                             Enter
                         </kbd>
                     </div>
@@ -265,7 +264,7 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                     <Button
                         onClick={handleSubmit}
                         disabled={isLoading || !title.trim()}
-                        className="h-7 px-3 bg-neutral-900 text-white text-xs font-semibold rounded-md hover:bg-neutral-800 transition-colors disabled:opacity-50"
+                        className="h-7 px-3 text-xs font-semibold rounded-md transition-colors"
                     >
                         {isLoading ? "Creating..." : "Add Task"}
                     </Button>

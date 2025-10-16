@@ -1,4 +1,3 @@
-// features/ai/components/chat.tsx
 "use client";
 
 import { useChat } from "@ai-sdk/react";
@@ -20,6 +19,8 @@ const USER_AVATAR = "https://www.gravatar.com/avatar/000000000000000000000000000
 export function Chat({ onClose }: ChatProps) {
     const [input, setInput] = useState("");
     const scrollRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     const { messages, sendMessage, status, stop } = useChat({
         transport: new DefaultChatTransport({
@@ -30,9 +31,17 @@ export function Chat({ onClose }: ChatProps) {
     // Auto-scroll to bottom on new messages
     useEffect(() => {
         if (scrollRef.current) {
-            scrollRef.current.scrollIntoView({ behavior: "smooth" });
+            scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
         }
     }, [messages, status]);
+
+    // Auto-resize textarea
+    useEffect(() => {
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+            textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
+        }
+    }, [input]);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -55,147 +64,148 @@ export function Chat({ onClose }: ChatProps) {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between border-b px-3 sm:px-4 py-3 sm:py-3.5 shrink-0 bg-background">
-                <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+            <div className="flex items-center justify-between border-b px-3 md:px-4 py-2.5 md:py-3 shrink-0 bg-background">
+                <div className="flex items-center gap-2 md:gap-2.5 min-w-0">
                     <div className="relative shrink-0">
-                        <div className="size-7 sm:size-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Sparkles className="size-3.5 sm:size-4 text-primary" />
+                        <div className="size-8 md:size-9 rounded-full bg-primary/10 flex items-center justify-center">
+                            <Sparkles className="size-4 md:size-4.5 text-primary" />
                         </div>
-                        <div className="absolute bottom-0 right-0 size-1.5 sm:size-2 rounded-full bg-green-500 ring-2 ring-background" />
+                        <div className="absolute bottom-0 right-0 size-2 rounded-full bg-green-500 ring-2 ring-background" />
                     </div>
                     <div className="min-w-0 flex-1">
-                        <h2 className="text-xs sm:text-sm font-semibold truncate">Task Assistant</h2>
-                        <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                        <h2 className="text-sm md:text-base font-semibold truncate">Task Assistant</h2>
+                        <p className="text-xs text-muted-foreground truncate">
                             Always here to help
                         </p>
                     </div>
                 </div>
             </div>
 
-            {/* Messages */}
-            <ScrollArea className="flex-1 px-3 sm:px-4">
-                <div className="space-y-3 sm:space-y-4 py-3 sm:py-4">
-                    {messages.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center px-4">
-                            <div className="mb-3 sm:mb-4 rounded-xl sm:rounded-2xl bg-primary/5 p-3 sm:p-4 ring-1 ring-primary/10">
-                                <Sparkles className="size-6 sm:size-8 text-primary" />
-                            </div>
-                            <h3 className="text-xs sm:text-sm font-semibold mb-1 sm:mb-1.5">
-                                Your AI Task Assistant
-                            </h3>
-                            <p className="text-[10px] sm:text-xs text-muted-foreground max-w-[280px] leading-relaxed">
-                                Ask me to create, organize, or manage your tasks using natural
-                                language
-                            </p>
-                            <div className="mt-4 sm:mt-6 flex flex-wrap gap-1.5 sm:gap-2 justify-center">
-                                {[
-                                    "Create a task for tomorrow",
-                                    "Show my pending tasks",
-                                    "Organize by priority",
-                                ].map((suggestion) => (
-                                    <button
-                                        key={suggestion}
-                                        onClick={() => setInput(suggestion)}
-                                        className="text-[10px] sm:text-xs px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-muted hover:bg-muted/80 transition-colors"
-                                    >
-                                        {suggestion}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {messages.map((message, index) => (
-                        <div
-                            key={message.id}
-                            className={cn(
-                                "flex gap-2 sm:gap-2.5 animate-in fade-in-0 slide-in-from-bottom-2 duration-300",
-                                message.role === "user" && "justify-end"
-                            )}
-                            style={{ animationDelay: `${index * 50}ms` }}
-                        >
-                            {message.role === "assistant" && (
-                                <Avatar className="size-6 sm:size-8 shrink-0">
-                                    <AvatarFallback className="bg-primary text-primary-foreground text-[10px] sm:text-xs">
-                                        <Sparkles className="size-3 sm:size-4" />
-                                    </AvatarFallback>
-                                </Avatar>
-                            )}
-
-                            <div
-                                className={cn(
-                                    "rounded-xl sm:rounded-2xl px-2.5 sm:px-3.5 py-2 sm:py-2.5 max-w-[85%] transition-all",
-                                    message.role === "user"
-                                        ? "bg-primary text-primary-foreground rounded-br-sm sm:rounded-br-md"
-                                        : "bg-muted rounded-bl-sm sm:rounded-bl-md"
-                                )}
-                            >
-                                {message.parts
-                                    .filter((part) => part.type === "text")
-                                    .map((part, i) => (
-                                        <p
-                                            key={i}
-                                            className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap break-words"
-                                        >
-                                            {part.text}
-                                        </p>
-                                    ))}
-                            </div>
-
-                            {message.role === "user" && (
-                                <Avatar className="size-6 sm:size-8 shrink-0">
-                                    <AvatarImage src={USER_AVATAR} alt="User" />
-                                    <AvatarFallback className="bg-muted text-[10px] sm:text-xs font-medium">
-                                        You
-                                    </AvatarFallback>
-                                </Avatar>
-                            )}
-                        </div>
-                    ))}
-
-                    {isLoading && (
-                        <div className="flex gap-2 sm:gap-2.5 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-                            <Avatar className="size-6 sm:size-8 shrink-0">
-                                <AvatarFallback className="bg-primary text-primary-foreground text-[10px] sm:text-xs">
-                                    <Sparkles className="size-3 sm:size-4" />
-                                </AvatarFallback>
-                            </Avatar>
-                            <div className="flex items-center gap-1.5 sm:gap-2 rounded-xl sm:rounded-2xl rounded-bl-sm sm:rounded-bl-md bg-muted px-2.5 sm:px-3.5 py-2 sm:py-2.5">
-                                <div className="flex gap-0.5 sm:gap-1">
-                                    <div className="size-1 sm:size-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
-                                    <div className="size-1 sm:size-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
-                                    <div className="size-1 sm:size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
+            {/* Messages - Fixed Height ScrollArea */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+                <ScrollArea className="h-full px-3 md:px-4 lg:px-6">
+                    <div className="space-y-3 md:space-y-4 py-3 md:py-4 max-w-4xl mx-auto">
+                        {messages.length === 0 && (
+                            <div className="flex flex-col items-center justify-center py-8 md:py-12 lg:py-16 text-center px-4">
+                                <div className="mb-3 md:mb-4 rounded-xl md:rounded-2xl bg-primary/5 p-3 md:p-4 ring-1 ring-primary/10">
+                                    <Sparkles className="size-7 md:size-8 lg:size-10 text-primary" />
                                 </div>
-                                <span className="text-[10px] sm:text-xs text-muted-foreground">Thinking</span>
+                                <h3 className="text-sm md:text-base font-semibold mb-1 md:mb-2">
+                                    Your AI Task Assistant
+                                </h3>
+                                <p className="text-xs md:text-sm text-muted-foreground max-w-sm leading-relaxed">
+                                    Ask me to create, organize, or manage your tasks using natural
+                                    language
+                                </p>
+                                <div className="mt-4 md:mt-6 flex flex-wrap gap-2 justify-center max-w-md">
+                                    {[
+                                        "Create a task for tomorrow",
+                                        "Show my pending tasks",
+                                        "Organize by priority",
+                                    ].map((suggestion) => (
+                                        <button
+                                            key={suggestion}
+                                            onClick={() => setInput(suggestion)}
+                                            className="text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                                        >
+                                            {suggestion}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
 
-                    <div ref={scrollRef} />
-                </div>
-            </ScrollArea>
+                        {messages.map((message, index) => (
+                            <div
+                                key={message.id}
+                                className={cn(
+                                    "flex gap-2 md:gap-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-300",
+                                    message.role === "user" && "justify-end"
+                                )}
+                                style={{ animationDelay: `${index * 50}ms` }}
+                            >
+                                {message.role === "assistant" && (
+                                    <Avatar className="size-7 md:size-8 shrink-0 mt-1">
+                                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                            <Sparkles className="size-3.5 md:size-4" />
+                                        </AvatarFallback>
+                                    </Avatar>
+                                )}
+
+                                <div
+                                    className={cn(
+                                        "rounded-2xl px-3 md:px-4 py-2 md:py-2.5 max-w-[85%] md:max-w-[75%] transition-all",
+                                        message.role === "user"
+                                            ? "bg-primary text-primary-foreground rounded-br-md"
+                                            : "bg-muted rounded-bl-md"
+                                    )}
+                                >
+                                    {message.parts
+                                        .filter((part) => part.type === "text")
+                                        .map((part, i) => (
+                                            <p
+                                                key={i}
+                                                className="text-sm md:text-base leading-relaxed whitespace-pre-wrap break-words"
+                                            >
+                                                {part.text}
+                                            </p>
+                                        ))}
+                                </div>
+
+                                {message.role === "user" && (
+                                    <Avatar className="size-7 md:size-8 shrink-0 mt-1">
+                                        <AvatarImage src={USER_AVATAR} alt="User" />
+                                        <AvatarFallback className="bg-muted text-xs font-medium">
+                                            You
+                                        </AvatarFallback>
+                                    </Avatar>
+                                )}
+                            </div>
+                        ))}
+
+                        {isLoading && (
+                            <div className="flex gap-2 md:gap-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+                                <Avatar className="size-7 md:size-8 shrink-0 mt-1">
+                                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                        <Sparkles className="size-3.5 md:size-4" />
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="flex items-center gap-2 rounded-2xl rounded-bl-md bg-muted px-3 md:px-4 py-2 md:py-2.5">
+                                    <div className="flex gap-1">
+                                        <div className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.3s]" />
+                                        <div className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce [animation-delay:-0.15s]" />
+                                        <div className="size-1.5 rounded-full bg-muted-foreground/60 animate-bounce" />
+                                    </div>
+                                    <span className="text-xs md:text-sm text-muted-foreground">Thinking</span>
+                                </div>
+                            </div>
+                        )}
+
+                        <div ref={scrollRef} />
+                    </div>
+                </ScrollArea>
+            </div>
 
             {/* Input */}
-            <div className="border-t p-2 sm:p-3 shrink-0 bg-background">
-                <form onSubmit={handleSubmit}>
-                    <div className="flex gap-1.5 sm:gap-2 items-end">
+            <div className="border-t p-2 md:p-3 lg:p-4 shrink-0 bg-background">
+                <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+                    <div className="flex gap-2 items-end">
                         <div className="flex-1 relative">
                             <Textarea
+                                ref={textareaRef}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Ask me anything..."
-                                className="min-h-[44px] sm:min-h-[48px] max-h-[100px] sm:max-h-[120px] resize-none text-xs sm:text-sm pr-10 sm:pr-12 rounded-lg sm:rounded-xl"
+                                className="min-h-[48px] md:min-h-[52px] max-h-[120px] md:max-h-[150px] resize-none text-sm md:text-base pr-12 rounded-xl"
                                 disabled={status !== "ready"}
                                 rows={1}
                             />
-                            <div className="absolute bottom-2 right-2 text-[10px] sm:text-xs text-muted-foreground">
-                                {input.length > 0 && (
-                                    <span className="animate-in fade-in-0 duration-200">
-                                        {input.length}
-                                    </span>
-                                )}
-                            </div>
+                            {input.length > 0 && (
+                                <div className="absolute bottom-3 right-3 text-xs text-muted-foreground animate-in fade-in-0 duration-200">
+                                    {input.length}
+                                </div>
+                            )}
                         </div>
 
                         {status === "ready" ? (
@@ -204,13 +214,13 @@ export function Chat({ onClose }: ChatProps) {
                                 size="icon"
                                 disabled={!input.trim()}
                                 className={cn(
-                                    "size-11 sm:size-12 shrink-0 rounded-lg sm:rounded-xl transition-all duration-200",
+                                    "size-12 md:size-[52px] shrink-0 rounded-xl transition-all duration-200",
                                     input.trim()
                                         ? "scale-100 opacity-100"
                                         : "scale-95 opacity-50"
                                 )}
                             >
-                                <Send className="size-3.5 sm:size-4" />
+                                <Send className="size-4 md:size-5" />
                             </Button>
                         ) : (
                             <Button
@@ -218,14 +228,14 @@ export function Chat({ onClose }: ChatProps) {
                                 size="icon"
                                 variant="destructive"
                                 onClick={stop}
-                                className="size-11 sm:size-12 shrink-0 rounded-lg sm:rounded-xl"
+                                className="size-12 md:size-[52px] shrink-0 rounded-xl"
                             >
-                                <StopCircle className="size-3.5 sm:size-4" />
+                                <StopCircle className="size-4 md:size-5" />
                             </Button>
                         )}
                     </div>
                 </form>
-                <p className="text-[9px] sm:text-xs text-muted-foreground mt-1.5 sm:mt-2 text-center hidden sm:block">
+                <p className="text-xs text-muted-foreground mt-2 text-center hidden md:block max-w-4xl mx-auto">
                     Press Enter to send, Shift+Enter for new line
                 </p>
             </div>

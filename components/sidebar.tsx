@@ -1,152 +1,184 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 import {
     Inbox,
     CalendarDays,
     CalendarClock,
     LayoutGrid,
     Settings,
-    ChevronRight,
+    Moon,
+    Sun,
 } from "lucide-react";
+
+import {
+    Sidebar as SidebarRoot,
+    SidebarContent,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupContent,
+    SidebarGroupLabel,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    SidebarProvider,
+    SidebarTrigger,
+    useSidebar,
+} from "@/components/ui/sidebar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
-interface NavItem {
-    name: string;
-    href: string;
-    icon: React.ComponentType<{ className?: string }>;
-    count?: number;
-}
-
-const mainNavigation: NavItem[] = [
+const mainNavigation = [
     { name: "Inbox", href: "/tasks", icon: Inbox, count: 12 },
     { name: "Today", href: "/tasks/today", icon: CalendarDays, count: 5 },
     { name: "Upcoming", href: "/tasks/upcoming", icon: CalendarClock, count: 8 },
 ];
 
-const sections = [
-    {
-        title: "My Projects",
-        items: [
-            { name: "Personal", href: "/projects/personal", count: 7 },
-            { name: "Work", href: "/projects/work", count: 12 },
-            { name: "Shopping List", href: "/projects/shopping", count: 3 },
-        ],
-    },
+const projects = [
+    { name: "Personal", href: "/projects/personal", count: 7 },
+    { name: "Work", href: "/projects/work", count: 12 },
+    { name: "Shopping List", href: "/projects/shopping", count: 3 },
 ];
 
-export default function Sidebar() {
+function AppSidebar() {
     const pathname = usePathname();
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
 
     return (
-        <aside className="fixed left-0 top-0 h-screen w-64 border-r bg-background flex flex-col">
-            {/* Header */}
-            <div className="h-14 flex items-center px-4 border-b">
+        <SidebarRoot>
+            <SidebarHeader>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton size="lg" asChild>
+                            <Link href="/tasks">
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                                    <LayoutGrid className="size-4" />
+                                </div>
+                                <div className="flex flex-col gap-0.5 leading-none">
+                                    <span className="font-semibold">Smart Do</span>
+                                    <span className="text-xs text-muted-foreground">Task Manager</span>
+                                </div>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarHeader>
+
+            <SidebarContent>
+                <SidebarGroup>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {mainNavigation.map((item) => {
+                                const isActive = pathname === item.href;
+                                return (
+                                    <SidebarMenuItem key={item.name}>
+                                        <SidebarMenuButton asChild isActive={isActive}>
+                                            <Link href={item.href}>
+                                                <item.icon />
+                                                <span>{item.name}</span>
+                                                {item.count > 0 && (
+                                                    <Badge variant="secondary" className="ml-auto">
+                                                        {item.count}
+                                                    </Badge>
+                                                )}
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                );
+                            })}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+
+                <SidebarGroup>
+                    <SidebarGroupLabel>My Projects</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            {projects.map((item) => {
+                                const isActive = pathname === item.href;
+                                return (
+                                    <SidebarMenuItem key={item.name}>
+                                        <SidebarMenuButton asChild isActive={isActive}>
+                                            <Link href={item.href}>
+                                                <div className="size-2 rounded-full bg-blue-500" />
+                                                <span>{item.name}</span>
+                                                {item.count > 0 && (
+                                                    <span className="ml-auto text-xs text-muted-foreground">
+                                                        {item.count}
+                                                    </span>
+                                                )}
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                );
+                            })}
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+            </SidebarContent>
+
+            <SidebarFooter>
+                <SidebarMenu>
+                    {mounted && (
+                        <SidebarMenuItem>
+                            <SidebarMenuButton onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                                {theme === "dark" ? <Sun /> : <Moon />}
+                                <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    )}
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                            <Link href="/settings">
+                                <Settings />
+                                <span>Settings</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
+        </SidebarRoot>
+    );
+}
+
+function MobileHeader() {
+    const { isMobile } = useSidebar();
+
+    if (!isMobile) return null;
+
+    return (
+        <>
+            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
+                <SidebarTrigger className="-ml-1" />
+                <Separator orientation="vertical" className="h-6" />
                 <div className="flex items-center gap-2">
-                    <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center">
-                        <LayoutGrid className="h-4 w-4 text-primary-foreground" />
+                    <div className="flex size-7 items-center justify-center rounded-md bg-primary">
+                        <LayoutGrid className="size-4 text-primary-foreground" />
                     </div>
                     <span className="font-semibold text-sm">Smart Do</span>
                 </div>
-            </div>
+            </header>
+        </>
+    );
+}
 
-            {/* Navigation */}
-            <div className="flex-1 overflow-y-auto py-4">
-                {/* Main Navigation */}
-                <nav className="px-2 space-y-0.5">
-                    {mainNavigation.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname === item.href;
-
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "flex items-center gap-3 px-2.5 py-2 rounded-md text-sm transition-colors group",
-                                    isActive
-                                        ? "bg-accent text-foreground font-medium"
-                                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                                )}
-                            >
-                                <Icon className="h-4 w-4 flex-shrink-0" />
-                                <span className="flex-1">{item.name}</span>
-                                {item.count !== undefined && item.count > 0 && (
-                                    <Badge
-                                        variant="secondary"
-                                        className={cn(
-                                            "h-5 px-1.5 text-xs font-medium",
-                                            isActive ? "bg-background/50" : "bg-transparent"
-                                        )}
-                                    >
-                                        {item.count}
-                                    </Badge>
-                                )}
-                            </Link>
-                        );
-                    })}
-                </nav>
-
-                {/* Projects Section */}
-                <div className="mt-6">
-                    {sections.map((section) => (
-                        <div key={section.title} className="px-2">
-                            <div className="flex items-center justify-between px-2.5 py-1.5 mb-1">
-                                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                    {section.title}
-                                </h3>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-5 w-5 hover:bg-accent"
-                                >
-                                    <ChevronRight className="h-3.5 w-3.5" />
-                                </Button>
-                            </div>
-                            <nav className="space-y-0.5">
-                                {section.items.map((item) => {
-                                    const isActive = pathname === item.href;
-
-                                    return (
-                                        <Link
-                                            key={item.href}
-                                            href={item.href}
-                                            className={cn(
-                                                "flex items-center gap-3 px-2.5 py-2 rounded-md text-sm transition-colors",
-                                                isActive
-                                                    ? "bg-accent text-foreground font-medium"
-                                                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                                            )}
-                                        >
-                                            <div className="h-2 w-2 rounded-full bg-blue-500 flex-shrink-0" />
-                                            <span className="flex-1 truncate">{item.name}</span>
-                                            {item.count !== undefined && item.count > 0 && (
-                                                <span className="text-xs text-muted-foreground">
-                                                    {item.count}
-                                                </span>
-                                            )}
-                                        </Link>
-                                    );
-                                })}
-                            </nav>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Footer */}
-            <div className="border-t p-2">
-                <Link
-                    href="/settings"
-                    className="flex items-center gap-3 px-2.5 py-2 rounded-md text-sm text-muted-foreground hover:bg-accent/50 hover:text-foreground transition-colors"
-                >
-                    <Settings className="h-4 w-4" />
-                    <span>Settings</span>
-                </Link>
-            </div>
-        </aside>
+export default function Sidebar({ children }: { children: React.ReactNode }) {
+    return (
+        <SidebarProvider>
+            <AppSidebar />
+            <main className="flex-1 w-full flex flex-col">
+                <MobileHeader />
+                <div className="flex-1">{children}</div>
+            </main>
+        </SidebarProvider>
     );
 }
