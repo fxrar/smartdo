@@ -177,6 +177,7 @@ function EditableDescription({
                                 {children}
                             </a>
                         ),
+
                     }}
                 >
                     {value}

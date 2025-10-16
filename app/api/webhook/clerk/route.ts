@@ -1,5 +1,7 @@
+// app/api/webhooks/clerk/route.ts
 import { Webhook } from "svix";
 import { prisma } from "@/lib/prisma";
+import { clerkClient } from "@clerk/nextjs/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +27,6 @@ function getName(data: any): string | null {
 
 export async function POST(req: Request) {
     const body = await req.text();
-
     const svixId = req.headers.get("svix-id");
     const svixTimestamp = req.headers.get("svix-timestamp");
     const svixSignature = req.headers.get("svix-signature");
@@ -57,10 +58,20 @@ export async function POST(req: Request) {
             return new Response("Invalid user payload", { status: 422 });
         }
 
-        await prisma.user.upsert({
+        // Create/update user in DB
+        const user = await prisma.user.upsert({
             where: { clerkId },
             create: { clerkId, email, name },
             update: { email, name },
+        });
+
+        // NEW: Store internal DB user.id in Clerk metadata
+        // This caches the ID so future requests don't need DB lookup
+        const clerk = await clerkClient();
+        await clerk.users.updateUserMetadata(clerkId, {
+            publicMetadata: {
+                internal_user_id: user.id // Stores your DB's user.id
+            }
         });
 
         return new Response("ok", { status: 200 });

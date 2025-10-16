@@ -3,10 +3,8 @@ import { updateTask, deleteTask, getTask } from "@/features/tasks/actions";
 import { TaskError } from "@/features/tasks/utils";
 import { UpdateTaskInput } from "@/features/tasks/types";
 
-export async function GET(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         const task = await getTask(params.id);
         return NextResponse.json({ success: true, data: task });
@@ -27,10 +25,8 @@ export async function GET(
     }
 }
 
-export async function PATCH(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         const body = await request.json();
 
@@ -61,10 +57,8 @@ export async function PATCH(
     }
 }
 
-export async function DELETE(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     try {
         await deleteTask(params.id);
         return NextResponse.json({ success: true, message: "Task deleted successfully" });

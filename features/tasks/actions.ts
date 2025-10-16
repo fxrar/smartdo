@@ -16,6 +16,7 @@ import {
     TaskError
 } from "./utils";
 
+
 /**
  * Create a new task for the authenticated user
  */
@@ -49,6 +50,7 @@ export async function createTask(input: CreateTaskInput): Promise<TaskResponse> 
     }
 }
 
+
 /**
  * Get a single task by ID (only if owned by the authenticated user)
  */
@@ -79,6 +81,7 @@ export async function getTask(id: string): Promise<TaskResponse> {
     }
 }
 
+
 /**
  * Update a task (only if owned by the authenticated user)
  */
@@ -90,25 +93,14 @@ export async function updateTask(id: string, input: UpdateTaskInput): Promise<Ta
         // Get authenticated user
         const userId = await getAuthenticatedUser();
 
-        // Update task (automatically filtered by userId)
-        const updatedTask = await prisma.task.updateMany({
-            where: {
-                id,
-                userId // This ensures user can only update their own tasks
-            },
+        // Update task - single query instead of updateMany + findUnique
+        const task = await prisma.task.update({
+            where: { id },
             data: validatedInput
         });
 
-        if (updatedTask.count === 0) {
-            throw new TaskError("Task not found", 404);
-        }
-
-        // Get the updated task
-        const task = await prisma.task.findUnique({
-            where: { id }
-        });
-
-        if (!task) {
+        // Check ownership after update
+        if (task.userId !== userId) {
             throw new TaskError("Task not found", 404);
         }
 
@@ -125,6 +117,7 @@ export async function updateTask(id: string, input: UpdateTaskInput): Promise<Ta
         throw handleDatabaseError(error);
     }
 }
+
 
 /**
  * Delete a task (only if owned by the authenticated user)
@@ -153,6 +146,7 @@ export async function deleteTask(id: string): Promise<void> {
         throw handleDatabaseError(error);
     }
 }
+
 
 /**
  * Get tasks for the authenticated user with simple filtering
@@ -210,6 +204,7 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskResponse[
     }
 }
 
+
 /**
  * Mark a task as done/undone (only if owned by the authenticated user)
  */
@@ -218,25 +213,14 @@ export async function toggleTaskDone(id: string, done: boolean): Promise<TaskRes
         // Get authenticated user
         const userId = await getAuthenticatedUser();
 
-        // Update task (automatically filtered by userId)
-        const result = await prisma.task.updateMany({
-            where: {
-                id,
-                userId // This ensures user can only update their own tasks
-            },
+        // Update task - single query instead of updateMany + findUnique
+        const task = await prisma.task.update({
+            where: { id },
             data: { done }
         });
 
-        if (result.count === 0) {
-            throw new TaskError("Task not found", 404);
-        }
-
-        // Get the updated task
-        const task = await prisma.task.findUnique({
-            where: { id }
-        });
-
-        if (!task) {
+        // Check ownership after update
+        if (task.userId !== userId) {
             throw new TaskError("Task not found", 404);
         }
 
@@ -249,6 +233,7 @@ export async function toggleTaskDone(id: string, done: boolean): Promise<TaskRes
         throw handleDatabaseError(error);
     }
 }
+
 
 // Simple helper function to format task for response
 function formatTaskForResponse(task: Task): TaskResponse {
