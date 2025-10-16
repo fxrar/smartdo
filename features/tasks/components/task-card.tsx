@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TaskResponse } from "@/features/tasks/types";
 import { format } from "date-fns";
 import ReactMarkdown from "react-markdown";
@@ -14,17 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import {
     CalendarIcon,
-    ClockIcon,
     CheckCircle2,
     Circle,
-    PencilIcon,
-    SaveIcon,
-    XIcon,
+    Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -36,6 +34,158 @@ interface TaskCardProps {
     onDelete?: (taskId: string) => void;
 }
 
+// Inline Editable Description Component
+function EditableDescription({
+    value,
+    onChange,
+}: {
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [localValue, setLocalValue] = useState(value);
+
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+
+    const handleSave = () => {
+        onChange(localValue);
+        setIsEditing(false);
+    };
+
+    const handleCancel = () => {
+        setLocalValue(value);
+        setIsEditing(false);
+    };
+
+    if (isEditing) {
+        return (
+            <div className="space-y-3">
+                <Textarea
+                    value={localValue}
+                    onChange={(e) => setLocalValue(e.target.value)}
+                    placeholder="Add a description..."
+                    className="min-h-[150px] sm:min-h-[200px] resize-none text-sm"
+                    autoFocus
+                    onKeyDown={(e) => {
+                        if (e.key === "Escape") {
+                            handleCancel();
+                        }
+                    }}
+                />
+                <div className="flex items-center gap-2">
+                    <Button size="sm" onClick={handleSave}>
+                        Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleCancel}>
+                        Cancel
+                    </Button>
+                    <span className="text-xs text-muted-foreground ml-2">
+                        ESC to cancel
+                    </span>
+                </div>
+            </div>
+        );
+    }
+
+    if (!value) {
+        return (
+            <button
+                onClick={() => setIsEditing(true)}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors text-left w-full p-2 rounded-md hover:bg-muted/50"
+            >
+                Click to add a description...
+            </button>
+        );
+    }
+
+    return (
+        <div
+            onClick={() => setIsEditing(true)}
+            className="cursor-pointer p-2 -m-2 rounded-md hover:bg-muted/50 transition-colors"
+        >
+            <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none">
+                <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                        p: ({ children }) => (
+                            <p className="text-sm leading-relaxed text-foreground/90 mb-3 last:mb-0">
+                                {children}
+                            </p>
+                        ),
+                        h1: ({ children }) => (
+                            <h1 className="text-lg font-bold mb-3 text-foreground">
+                                {children}
+                            </h1>
+                        ),
+                        h2: ({ children }) => (
+                            <h2 className="text-base font-bold mb-2 text-foreground">
+                                {children}
+                            </h2>
+                        ),
+                        h3: ({ children }) => (
+                            <h3 className="text-sm font-semibold mb-2 text-foreground">
+                                {children}
+                            </h3>
+                        ),
+                        ul: ({ children }) => (
+                            <ul className="list-disc list-inside space-y-1 mb-3 text-sm">
+                                {children}
+                            </ul>
+                        ),
+                        ol: ({ children }) => (
+                            <ol className="list-decimal list-inside space-y-1 mb-3 text-sm">
+                                {children}
+                            </ol>
+                        ),
+                        li: ({ children }) => (
+                            <li className="text-foreground/90">{children}</li>
+                        ),
+                        blockquote: ({ children }) => (
+                            <blockquote className="border-l-4 border-primary/30 pl-4 italic text-muted-foreground my-3">
+                                {children}
+                            </blockquote>
+                        ),
+                        code: ({ children, className }) => {
+                            const isInline = !className;
+                            return isInline ? (
+                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs text-foreground">
+                                    {children}
+                                </code>
+                            ) : (
+                                <code className="block bg-muted p-3 rounded-lg text-xs overflow-x-auto">
+                                    {children}
+                                </code>
+                            );
+                        },
+                        strong: ({ children }) => (
+                            <strong className="font-semibold text-foreground">
+                                {children}
+                            </strong>
+                        ),
+                        em: ({ children }) => (
+                            <em className="italic text-foreground/90">{children}</em>
+                        ),
+                        a: ({ children, href }) => (
+                            <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                            >
+                                {children}
+                            </a>
+                        ),
+                    }}
+                >
+                    {value}
+                </ReactMarkdown>
+            </div>
+        </div>
+    );
+}
+
 export function TaskCard({
     task,
     open,
@@ -43,40 +193,40 @@ export function TaskCard({
     onTaskUpdate,
     onDelete,
 }: TaskCardProps) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-
-    // Edit states
     const [editTitle, setEditTitle] = useState(task?.title || "");
     const [editDescription, setEditDescription] = useState(task?.description || "");
     const [editDueDate, setEditDueDate] = useState<Date | undefined>(
         task?.dueDate ? new Date(task.dueDate) : undefined
     );
 
-    if (!task) return null;
+    const [hasChanges, setHasChanges] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
-    const formattedDate = task.dueDate
-        ? format(new Date(task.dueDate), "EEEE, MMMM d, yyyy")
-        : null;
+    // Update local state when task changes
+    useEffect(() => {
+        if (task) {
+            setEditTitle(task.title);
+            setEditDescription(task.description || "");
+            setEditDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
+            setHasChanges(false);
+        }
+    }, [task]);
 
-    const formattedTime = task.dueDate ? format(new Date(task.dueDate), "h:mm a") : null;
+    // Check for changes
+    useEffect(() => {
+        if (!task) return;
 
-    const handleEdit = () => {
-        setEditTitle(task.title);
-        setEditDescription(task.description || "");
-        setEditDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
-        setIsEditing(true);
-    };
+        const titleChanged = editTitle !== task.title;
+        const descChanged = editDescription !== (task.description || "");
+        const dateChanged =
+            editDueDate?.getTime() !==
+            (task.dueDate ? new Date(task.dueDate).getTime() : undefined);
 
-    const handleCancel = () => {
-        setIsEditing(false);
-        setEditTitle(task.title);
-        setEditDescription(task.description || "");
-        setEditDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
-    };
+        setHasChanges(titleChanged || descChanged || dateChanged);
+    }, [editTitle, editDescription, editDueDate, task]);
 
-    const handleSave = async () => {
-        if (!editTitle.trim()) {
+    const handleSave = useCallback(async () => {
+        if (!task || !editTitle.trim()) {
             toast.error("Title cannot be empty");
             return;
         }
@@ -90,260 +240,151 @@ export function TaskCard({
             });
 
             onTaskUpdate?.(updatedTask);
-            setIsEditing(false);
-            toast.success("Task updated successfully");
+            setHasChanges(false);
+            toast.success("Changes saved");
         } catch (error) {
             console.error("Failed to update task:", error);
-            toast.error("Failed to update task");
+            toast.error("Failed to save changes");
         } finally {
             setIsSaving(false);
         }
-    };
+    }, [task, editTitle, editDescription, editDueDate, onTaskUpdate]);
+
+    if (!task) return null;
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-xl w-full p-0 overflow-hidden flex flex-col">
-                {/* Header */}
-                <div className="flex items-start gap-4 px-6 py-5 border-b">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                        {/* Status Icon */}
-                        <div className="flex-shrink-0 pt-1">
-                            {task.done ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                            ) : (
-                                <Circle className="h-5 w-5 text-muted-foreground" />
-                            )}
-                        </div>
+            <SheetContent
+                className="w-full sm:max-w-xl p-0 overflow-hidden flex flex-col"
+                side="right"
+            >
+                {/* Accessible Title (Hidden) */}
+                <VisuallyHidden>
+                    <SheetHeader>
+                        <SheetTitle>Task Details</SheetTitle>
+                    </SheetHeader>
+                </VisuallyHidden>
 
-                        {/* Title */}
-                        <div className="flex-1 min-w-0">
-                            {isEditing ? (
-                                <Input
-                                    value={editTitle}
-                                    onChange={(e) => setEditTitle(e.target.value)}
-                                    placeholder="Task title"
-                                    className="text-xl font-semibold"
-                                    autoFocus
-                                />
-                            ) : (
-                                <h1
-                                    className={cn(
-                                        "text-xl font-semibold leading-tight tracking-tight break-words",
-                                        task.done && "text-muted-foreground line-through"
-                                    )}
-                                >
-                                    {task.title}
-                                </h1>
-                            )}
-                            {task.done && !isEditing && (
-                                <Badge variant="secondary" className="mt-2 text-xs">
-                                    Completed
-                                </Badge>
-                            )}
-                        </div>
+                {/* Header */}
+                <div className="flex items-start gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b">
+                    <div className="flex-shrink-0 pt-1">
+                        {task.done ? (
+                            <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        ) : (
+                            <Circle className="h-5 w-5 text-muted-foreground" />
+                        )}
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-2">
+                        <Input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="Task title"
+                            className="text-lg sm:text-xl font-semibold border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-auto"
+                        />
+                        {task.done && (
+                            <Badge variant="secondary" className="text-xs">
+                                Completed
+                            </Badge>
+                        )}
                     </div>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+                <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-6">
                     {/* Date & Time Section */}
                     <div className="space-y-3">
                         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             Due Date
                         </h2>
-                        {isEditing ? (
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal",
-                                            !editDueDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal text-sm",
+                                        !editDueDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                                    <span className="truncate">
                                         {editDueDate ? (
                                             format(editDueDate, "PPP 'at' p")
                                         ) : (
-                                            <span>Pick a date</span>
+                                            "Pick a date"
                                         )}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={editDueDate}
-                                        onSelect={setEditDueDate}
-                                        initialFocus
+                                    </span>
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={editDueDate}
+                                    onSelect={setEditDueDate}
+                                    initialFocus
+                                />
+                                <div className="p-3 border-t">
+                                    <Input
+                                        type="time"
+                                        value={
+                                            editDueDate ? format(editDueDate, "HH:mm") : ""
+                                        }
+                                        onChange={(e) => {
+                                            const [hours, minutes] = e.target.value.split(":");
+                                            const newDate = editDueDate || new Date();
+                                            newDate.setHours(
+                                                parseInt(hours),
+                                                parseInt(minutes)
+                                            );
+                                            setEditDueDate(new Date(newDate));
+                                        }}
+                                        className="w-full"
                                     />
-                                    <div className="p-3 border-t">
-                                        <Input
-                                            type="time"
-                                            value={
-                                                editDueDate
-                                                    ? format(editDueDate, "HH:mm")
-                                                    : ""
-                                            }
-                                            onChange={(e) => {
-                                                const [hours, minutes] = e.target.value.split(":");
-                                                const newDate = editDueDate || new Date();
-                                                newDate.setHours(parseInt(hours), parseInt(minutes));
-                                                setEditDueDate(new Date(newDate));
-                                            }}
-                                            className="w-full"
-                                        />
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                        ) : task.dueDate ? (
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2 text-sm">
-                                    <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                    <span className="font-medium">{formattedDate}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                    <ClockIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                    <span className="text-muted-foreground">{formattedTime}</span>
-                                </div>
-                            </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">No due date set</p>
-                        )}
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
-                    {((task.dueDate || editDueDate) || task.description || isEditing) && <Separator />}
+                    <Separator />
 
-                    {/* Description Section */}
+                    {/* Description Section with Click to Edit */}
                     <div className="space-y-3">
                         <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                             Description
                         </h2>
-                        {isEditing ? (
-                            <Textarea
-                                value={editDescription}
-                                onChange={(e) => setEditDescription(e.target.value)}
-                                placeholder="Add a description..."
-                                className="min-h-[200px] resize-none"
-                            />
-                        ) : task.description ? (
-                            <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none">
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    components={{
-                                        p: ({ children }) => (
-                                            <p className="text-sm leading-relaxed text-foreground/90 mb-3 last:mb-0">
-                                                {children}
-                                            </p>
-                                        ),
-                                        h1: ({ children }) => (
-                                            <h1 className="text-lg font-bold mb-3 text-foreground">
-                                                {children}
-                                            </h1>
-                                        ),
-                                        h2: ({ children }) => (
-                                            <h2 className="text-base font-bold mb-2 text-foreground">
-                                                {children}
-                                            </h2>
-                                        ),
-                                        h3: ({ children }) => (
-                                            <h3 className="text-sm font-semibold mb-2 text-foreground">
-                                                {children}
-                                            </h3>
-                                        ),
-                                        ul: ({ children }) => (
-                                            <ul className="list-disc list-inside space-y-1 mb-3 text-sm">
-                                                {children}
-                                            </ul>
-                                        ),
-                                        ol: ({ children }) => (
-                                            <ol className="list-decimal list-inside space-y-1 mb-3 text-sm">
-                                                {children}
-                                            </ol>
-                                        ),
-                                        li: ({ children }) => (
-                                            <li className="text-foreground/90">{children}</li>
-                                        ),
-                                        blockquote: ({ children }) => (
-                                            <blockquote className="border-l-4 border-primary/30 pl-4 italic text-muted-foreground my-3">
-                                                {children}
-                                            </blockquote>
-                                        ),
-                                        code: ({ children, className }) => {
-                                            const isInline = !className;
-                                            return isInline ? (
-                                                <code className="bg-muted px-1.5 py-0.5 rounded text-xs text-foreground">
-                                                    {children}
-                                                </code>
-                                            ) : (
-                                                <code className="block bg-muted p-3 rounded-lg text-xs overflow-x-auto">
-                                                    {children}
-                                                </code>
-                                            );
-                                        },
-                                        strong: ({ children }) => (
-                                            <strong className="font-semibold text-foreground">
-                                                {children}
-                                            </strong>
-                                        ),
-                                        em: ({ children }) => (
-                                            <em className="italic text-foreground/90">{children}</em>
-                                        ),
-                                        a: ({ children, href }) => (
-                                            <a
-                                                href={href}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-primary hover:underline"
-                                            >
-                                                {children}
-                                            </a>
-                                        ),
-                                    }}
-                                >
-                                    {task.description}
-                                </ReactMarkdown>
-                            </div>
-                        ) : (
-                            <p className="text-sm text-muted-foreground">No description</p>
-                        )}
+                        <EditableDescription
+                            value={editDescription}
+                            onChange={setEditDescription}
+                        />
                     </div>
                 </div>
 
                 {/* Footer Actions */}
-                <div className="border-t px-6 py-4 flex items-center gap-2 justify-between">
-                    {isEditing ? (
-                        <>
+                <div className="border-t px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-2 justify-between bg-background">
+                    {onDelete && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => onDelete(task.id)}
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                            <Trash2 className="h-4 w-4 sm:mr-2" />
+                            <span className="hidden sm:inline">Delete</span>
+                        </Button>
+                    )}
+
+                    <div className="ml-auto">
+                        {hasChanges && (
                             <Button
-                                variant="outline"
                                 size="sm"
-                                onClick={handleCancel}
-                                disabled={isSaving}
+                                onClick={handleSave}
+                                disabled={isSaving || !editTitle.trim()}
+                                className="ml-auto"
                             >
-                                <XIcon className="mr-2 h-4 w-4" />
-                                Cancel
-                            </Button>
-                            <Button size="sm" onClick={handleSave} disabled={isSaving}>
-                                <SaveIcon className="mr-2 h-4 w-4" />
                                 {isSaving ? "Saving..." : "Save Changes"}
                             </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button variant="outline" size="sm" onClick={handleEdit}>
-                                <PencilIcon className="mr-2 h-4 w-4" />
-                                Edit Task
-                            </Button>
-                            {onDelete && (
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => onDelete(task.id)}
-                                >
-                                    Delete Task
-                                </Button>
-                            )}
-                        </>
-                    )}
+                        )}
+                    </div>
                 </div>
             </SheetContent>
         </Sheet>

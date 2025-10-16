@@ -6,7 +6,6 @@ import { TaskCard } from "@/features/tasks/components/task-card";
 import { CreateTaskInput } from "@/features/tasks/components/create-task-input";
 import { getTasks } from "@/features/tasks/components/actions";
 import { TaskResponse } from "@/features/tasks/types";
-import { ChatButton } from "@/features/ai/components/chat-button";
 import { MessageSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Chat } from "@/features/ai/components/chat";
@@ -92,14 +91,14 @@ export default function TasksPage() {
     return (
         <div className="min-h-screen">
             {/* Main Content Area */}
-            <div className="max-w-4xl mx-auto px-6 py-6">
+            <div className="max-w-4xl mx-auto px-6 py-8">
                 {/* Header */}
-                <div className="mb-6">
-                    <div className="flex items-baseline justify-between mb-1">
+                <div className="mb-8">
+                    <div className="flex items-baseline gap-3 mb-1">
                         <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
                         {!isLoading && (
-                            <span className="text-sm text-muted-foreground">
-                                {tasks.length} {tasks.length === 1 ? "task" : "tasks"}
+                            <span className="text-xs text-muted-foreground font-medium">
+                                {tasks.length}
                             </span>
                         )}
                     </div>
@@ -109,38 +108,47 @@ export default function TasksPage() {
                 </div>
 
                 {/* Quick Create Input */}
-                <div className="mb-5">
+                <div className="mb-6">
                     <CreateTaskInput onTaskCreated={handleTaskCreated} />
                 </div>
 
                 {/* Filters */}
-                <div className="flex items-center gap-1.5 mb-5">
+                <div className="flex items-center gap-6 mb-6 border-b border-border">
                     <button
-                        className={`h-7 rounded-md px-3 text-xs font-medium transition-colors ${filter === "all"
-                            ? "bg-foreground text-background"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        className={`pb-3 text-sm font-medium transition-colors relative ${filter === "all"
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                         onClick={() => setFilter("all")}
                     >
                         All
+                        {filter === "all" && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
+                        )}
                     </button>
                     <button
-                        className={`h-7 rounded-md px-3 text-xs font-medium transition-colors ${filter === "today"
-                            ? "bg-foreground text-background"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        className={`pb-3 text-sm font-medium transition-colors relative ${filter === "today"
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                         onClick={() => setFilter("today")}
                     >
                         Today
+                        {filter === "today" && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
+                        )}
                     </button>
                     <button
-                        className={`h-7 rounded-md px-3 text-xs font-medium transition-colors ${filter === "tomorrow"
-                            ? "bg-foreground text-background"
-                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        className={`pb-3 text-sm font-medium transition-colors relative ${filter === "tomorrow"
+                            ? "text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
                             }`}
                         onClick={() => setFilter("tomorrow")}
                     >
                         Tomorrow
+                        {filter === "tomorrow" && (
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
+                        )}
                     </button>
                 </div>
 
@@ -165,14 +173,10 @@ export default function TasksPage() {
             {/* Floating Chat Button */}
             <Button
                 size="icon"
-                className="fixed bottom-6 right-6 size-14 rounded-full shadow-lg hover:shadow-xl transition-all z-50"
+                className="fixed bottom-6 right-6 size-14 rounded-full z-50"
                 onClick={() => setIsChatOpen(!isChatOpen)}
             >
-                {isChatOpen ? (
-                    <X className="size-6" />
-                ) : (
-                    <MessageSquare className="size-6" />
-                )}
+                {isChatOpen ? <X className="size-6" /> : <MessageSquare className="size-6" />}
             </Button>
 
             {/* Chat Sidebar/Modal */}
@@ -185,7 +189,7 @@ export default function TasksPage() {
                     />
 
                     {/* Chat Panel */}
-                    <div className="fixed bottom-0 right-0 md:bottom-6 md:right-24 w-full md:w-[440px] h-[85vh] md:h-[680px] bg-background border md:rounded-2xl shadow-2xl z-50 flex flex-col">
+                    <div className="fixed bottom-0 right-0 md:bottom-6 md:right-24 w-full md:w-[440px] h-[85vh] md:h-[680px] bg-background border md:rounded-2xl z-50 flex flex-col">
                         <Chat onClose={() => setIsChatOpen(false)} />
                     </div>
                 </>

@@ -37,7 +37,16 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className={dmSans.variable}>
+        <head>
+          <script
+            async
+            crossOrigin="anonymous"
+            src="https://tweakcn.com/live-preview.min.js"
+          />
+        </head>
         <body className="font-sans antialiased">
+
+
 
           <AppLayout>{children}</AppLayout>
 

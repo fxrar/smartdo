@@ -55,6 +55,7 @@ export async function getAuthenticatedUser(): Promise<string> {
 
         return user.id;
     } catch (error) {
+        console.log(error)
         if (error instanceof TaskError) {
             throw error;
         }
