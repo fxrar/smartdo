@@ -6,9 +6,6 @@ import { TaskCard } from "@/features/tasks/components/task-card";
 import { CreateTaskInput } from "@/features/tasks/components/create-task-input";
 import { getTasks } from "@/features/tasks/components/actions";
 import { TaskResponse } from "@/features/tasks/types";
-import { MessageSquare, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Chat } from "@/features/ai/components/chat";
 
 type QuickFilter = "all" | "today" | "tomorrow";
 
@@ -17,7 +14,6 @@ export default function TasksPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedTask, setSelectedTask] = useState<TaskResponse | null>(null);
     const [isTaskCardOpen, setIsTaskCardOpen] = useState(false);
-    const [isChatOpen, setIsChatOpen] = useState(false);
     const [filter, setFilter] = useState<QuickFilter>("all");
 
     useEffect(() => {
@@ -164,26 +160,6 @@ export default function TasksPage() {
                     />
                 )}
             </div>
-
-            <Button
-                size="icon"
-                className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 size-12 sm:size-14 rounded-full shadow-lg z-40"
-                onClick={() => setIsChatOpen(!isChatOpen)}
-            >
-                {isChatOpen ? <X className="size-5 sm:size-6" /> : <MessageSquare className="size-5 sm:size-6" />}
-            </Button>
-
-            {isChatOpen && (
-                <>
-                    <div
-                        className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 lg:hidden"
-                        onClick={() => setIsChatOpen(false)}
-                    />
-                    <div className="fixed bottom-0 right-0 lg:bottom-6 lg:right-20 w-full lg:w-[440px] h-[90vh] lg:h-[680px] bg-background border-t lg:border lg:rounded-2xl shadow-2xl z-50 flex flex-col">
-                        <Chat onClose={() => setIsChatOpen(false)} />
-                    </div>
-                </>
-            )}
 
             {isTaskCardOpen && (
                 <TaskCard

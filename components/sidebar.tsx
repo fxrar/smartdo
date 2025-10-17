@@ -1,3 +1,4 @@
+// components/sidebar.tsx - MOBILE RESPONSIVE
 "use client";
 
 import * as React from "react";
@@ -5,13 +6,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
-    Inbox,
+    LayoutList,
     CalendarDays,
     CalendarClock,
     LayoutGrid,
     Settings,
     Moon,
     Sun,
+    MessageSquare,
 } from "lucide-react";
 
 import {
@@ -20,7 +22,6 @@ import {
     SidebarFooter,
     SidebarGroup,
     SidebarGroupContent,
-    SidebarGroupLabel,
     SidebarHeader,
     SidebarMenu,
     SidebarMenuButton,
@@ -29,22 +30,16 @@ import {
     SidebarTrigger,
     useSidebar,
 } from "@/components/ui/sidebar";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Chat } from "@/features/ai/components/chat";
 
 const mainNavigation = [
-    { name: "Inbox", href: "/tasks", icon: Inbox, count: 12 },
-    { name: "Today", href: "/tasks/today", icon: CalendarDays, count: 5 },
-    { name: "Upcoming", href: "/tasks/upcoming", icon: CalendarClock, count: 8 },
+    { name: "All", href: "/app", icon: LayoutList },
+    { name: "Today", href: "/tasks/today", icon: CalendarDays },
+    { name: "Upcoming", href: "/tasks/upcoming", icon: CalendarClock },
 ];
 
-const projects = [
-    { name: "Personal", href: "/projects/personal", count: 7 },
-    { name: "Work", href: "/projects/work", count: 12 },
-    { name: "Shopping List", href: "/projects/shopping", count: 3 },
-];
-
-function AppSidebar() {
+function AppSidebar({ isChatOpen, toggleChat }: { isChatOpen: boolean; toggleChat: () => void }) {
     const pathname = usePathname();
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = React.useState(false);
@@ -85,37 +80,6 @@ function AppSidebar() {
                                             <Link href={item.href}>
                                                 <item.icon />
                                                 <span>{item.name}</span>
-                                                {item.count > 0 && (
-                                                    <Badge variant="secondary" className="ml-auto">
-                                                        {item.count}
-                                                    </Badge>
-                                                )}
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                );
-                            })}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-
-                <SidebarGroup>
-                    <SidebarGroupLabel>My Projects</SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {projects.map((item) => {
-                                const isActive = pathname === item.href;
-                                return (
-                                    <SidebarMenuItem key={item.name}>
-                                        <SidebarMenuButton asChild isActive={isActive}>
-                                            <Link href={item.href}>
-                                                <div className="size-2 rounded-full bg-blue-500" />
-                                                <span>{item.name}</span>
-                                                {item.count > 0 && (
-                                                    <span className="ml-auto text-xs text-muted-foreground">
-                                                        {item.count}
-                                                    </span>
-                                                )}
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
@@ -128,6 +92,12 @@ function AppSidebar() {
 
             <SidebarFooter>
                 <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton onClick={toggleChat} isActive={isChatOpen}>
+                            <MessageSquare />
+                            <span>AI Assistant</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     {mounted && (
                         <SidebarMenuItem>
                             <SidebarMenuButton onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
@@ -156,28 +126,48 @@ function MobileHeader() {
     if (!isMobile) return null;
 
     return (
-        <>
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
-                <SidebarTrigger className="-ml-1" />
-                <Separator orientation="vertical" className="h-6" />
-                <div className="flex items-center gap-2">
-                    <div className="flex size-7 items-center justify-center rounded-md bg-primary">
-                        <LayoutGrid className="size-4 text-primary-foreground" />
-                    </div>
-                    <span className="font-semibold text-sm">Smart Do</span>
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 shrink-0">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="h-6" />
+            <div className="flex items-center gap-2">
+                <div className="flex size-7 items-center justify-center rounded-md bg-primary">
+                    <LayoutGrid className="size-4 text-primary-foreground" />
                 </div>
-            </header>
-        </>
+                <span className="font-semibold text-sm">Smart Do</span>
+            </div>
+        </header>
     );
 }
 
 export default function Sidebar({ children }: { children: React.ReactNode }) {
+    const [isChatOpen, setIsChatOpen] = React.useState(false);
+
     return (
         <SidebarProvider>
-            <AppSidebar />
-            <main className="flex-1 w-full flex flex-col">
+            <AppSidebar isChatOpen={isChatOpen} toggleChat={() => setIsChatOpen(!isChatOpen)} />
+            <main className="flex-1 w-full flex flex-col h-[100dvh] overflow-hidden">
                 <MobileHeader />
-                <div className="flex-1">{children}</div>
+                <div className="flex-1 flex overflow-hidden min-h-0">
+                    {/* Chat Panel - Full width on mobile, 30% on desktop */}
+                    <div
+                        className={`${isChatOpen ? "w-full lg:w-[30%]" : "w-0"
+                            } transition-all duration-300 ease-in-out border-r overflow-hidden flex`}
+                    >
+                        {isChatOpen && (
+                            <div className="w-full">
+                                <Chat onClose={() => setIsChatOpen(false)} />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Main Content - Hidden on mobile when chat open, 70% on desktop */}
+                    <div
+                        className={`${isChatOpen ? "hidden lg:flex lg:w-[70%]" : "flex w-full"
+                            } transition-all duration-300 ease-in-out overflow-y-auto min-h-0`}
+                    >
+                        <div className="flex-1 w-full">{children}</div>
+                    </div>
+                </div>
             </main>
         </SidebarProvider>
     );

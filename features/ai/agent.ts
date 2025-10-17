@@ -1,6 +1,8 @@
 // features/ai/agent.ts
 import { streamText } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+
+// Import tools manually
 import { createTaskTool } from "./tools/create-task";
 import { listTasksTool } from "./tools/list-tasks";
 import { updateTaskTool } from "./tools/update-task";
@@ -13,7 +15,7 @@ const openrouter = createOpenRouter({
 
 export async function taskAgent(messages: any[]) {
     return streamText({
-        model: openrouter.chat("qwen/qwen3-coder-30b-a3b-instruct"),
+        model: openrouter.chat("x-ai/grok-code-fast-1"),
         messages,
         tools: {
             createTask: createTaskTool,
