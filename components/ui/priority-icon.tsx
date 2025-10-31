@@ -1,47 +1,23 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent } from "react";
-import { createTask } from "./actions";
+
 import { TaskResponse, Priority } from "@/features/tasks/types";
 import { Button } from "@/components/ui/button";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Textarea } from "@/components/ui/textarea";
+
 import {
     Calendar as CalendarIcon,
     Plus,
     Lightbulb,
     Flag,
 } from "lucide-react";
-import { format } from "date-fns";
+
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-// We no longer need the 'PrioritySelector' component import
-// import { PrioritySelector } from "@/components/ui/priority-selector";
-import { PriorityIcon } from "@/components/ui/priority-icon"; // Note: Assumes you have this component
+
+
 
 interface CreateTaskInputProps {
     onTaskCreated?: (task: TaskResponse) => void;
 }
-
-// Define the priority options for our new list
-const priorityOptions: Priority[] = [
-    "URGENT",
-    "HIGH",
-    "MEDIUM",
-    "LOW",
-    "NONE",
-];
-
-// Helper to format priority text nicely
-const formatPriorityText = (priority: Priority) => {
-    if (priority === "NONE") return "No Priority";
-    return priority.charAt(0) + priority.slice(1).toLowerCase();
-};
 
 export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
     const [title, setTitle] = useState("");
@@ -137,6 +113,7 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                         />
 
                         {/* --- Expanded Area (Description) --- */}
+                        {/* This animates in when the input is focused */}
                         {isFocused && (
                             <div className="animate-in fade-in-0 slide-in-from-top-2 duration-200">
                                 <Textarea
@@ -205,33 +182,22 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                                         : "text-muted-foreground"
                                 )}
                             >
+                                {/* Use a dynamic icon based on priority */}
                                 <PriorityIcon priority={priority} className="w-3.5 h-3.5" />
-                                {priority === "NONE" ? "Priority" : formatPriorityText(priority)}
+                                {priority === "NONE"
+                                    ? "Priority"
+                                    : priority.charAt(0) + priority.slice(1).toLowerCase()}
                             </Button>
                         </PopoverTrigger>
-                        {/* --- UPDATED POPOVER CONTENT --- */}
-                        <PopoverContent className="w-48 p-2" align="start">
-                            <div className="flex flex-col gap-1">
-                                {priorityOptions.map((p) => (
-                                    <Button
-                                        key={p}
-                                        variant="ghost"
-                                        size="sm"
-                                        className={cn(
-                                            "h-8 w-full justify-start gap-2 px-2 text-sm font-normal",
-                                            priority === p && "bg-muted" // Highlight selected
-                                        )}
-                                        onClick={() => {
-                                            setPriority(p);
-                                            setIsPriorityPopoverOpen(false);
-                                        }}
-                                        disabled={isLoading}
-                                    >
-                                        <PriorityIcon priority={p} className="w-3.5 h-3.5" />
-                                        {formatPriorityText(p)}
-                                    </Button>
-                                ))}
-                            </div>
+                        <PopoverContent className="w-48 p-3" align="start">
+                            <PrioritySelector
+                                value={priority}
+                                onChange={(p) => {
+                                    setPriority(p);
+                                    setIsPriorityPopoverOpen(false); // Close on select
+                                }}
+                                disabled={isLoading}
+                            />
                         </PopoverContent>
                     </Popover>
 
@@ -294,3 +260,27 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
         </div>
     );
 }
+
+/**
+ * A helper component to show the correct priority icon.
+ * You would place this in "@/components/ui/priority-icon.tsx" or similar.
+ */
+export const PriorityIcon = ({
+    priority,
+    className,
+}: {
+    priority: Priority;
+    className?: string;
+}) => {
+    const priorityMap: Record<Priority, { icon: React.ElementType; color: string }> = {
+        URGENT: { icon: Flag, color: "text-red-500" },
+        HIGH: { icon: Flag, color: "text-orange-500" },
+        MEDIUM: { icon: Flag, color: "text-blue-500" },
+        LOW: { icon: Flag, color: "text-green-500" },
+        NONE: { icon: Flag, color: "text-muted-foreground" },
+    };
+    const Icon = priorityMap[priority]?.icon || Flag;
+    const color = priorityMap[priority]?.color || "text-muted-foreground";
+
+    return <Icon className={cn(className, color, priority !== 'NONE' && 'fill-current')} />;
+};
