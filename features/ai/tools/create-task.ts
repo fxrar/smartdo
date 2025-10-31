@@ -11,19 +11,19 @@ export const createTaskTool = tool({
         "Create a new task for the authenticated user. Use this tool when the user wants to add a new task, todo item, or reminder to their task list.",
 
     inputSchema: z.object({
-        title: z.string().describe("The title or name of the task"),
-        description: z.string().optional().describe("Optional detailed description of the task"),
-        done: z.boolean().optional().describe("Whether the task is completed. Defaults to false"),
-        dueDate: z.string().optional().describe("Optional due date for the task in ISO 8601 format (e.g., '2025-10-20T10:00:00Z')"),
+        title: z.string().describe("The title or name of task"),
+        description: z.string().optional().describe("Optional detailed description of task"),
+        dueDate: z.string().optional().describe("Optional due date for task in ISO 8601 format (e.g., '2025-10-20T10:00:00Z')"),
+        priority: z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW', 'NONE']).optional().describe("Task priority level. Defaults to NONE if not specified"),
     }),
 
-    execute: async ({ title, description, done, dueDate }) => {
+    execute: async ({ title, description, dueDate, priority }) => {
         try {
             const task = await createTask({
                 title,
                 description,
-                done,
                 dueDate: dueDate ? new Date(dueDate) : undefined,
+                priority,
             });
 
             return {
@@ -35,6 +35,7 @@ export const createTaskTool = tool({
                     description: task.description,
                     done: task.done,
                     dueDate: task.dueDate,
+                    priority: task.priority,
                     createdAt: task.createdAt,
                 },
             };

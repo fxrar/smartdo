@@ -15,7 +15,7 @@ const openrouter = createOpenRouter({
 
 export async function taskAgent(messages: any[]) {
     return streamText({
-        model: openrouter.chat("x-ai/grok-code-fast-1"),
+        model: openrouter.chat("google/gemini-2.5-flash-lite-preview-09-2025"),
         messages,
         tools: {
             createTask: createTaskTool,
@@ -32,14 +32,14 @@ When users request actions:
 - "list/show tasks" → use listTasks  
 - "update/edit task" → use updateTask
 - "delete/remove task" → use deleteTask
-- "what time/date/day is it" or "time in X days" → use getTime
 
-For time queries, intelligently parse user requests like:
-- "what time is it" → no offset
-- "what time will it be in 2 days" → {days: 2}
-- "date next week" → {weeks: 1}
-- "time 3 hours from now" → {hours: 3}
 
+Help the user manage their tasks effectively and efficiently. 
+Act and behave like a friendly personal assistant. 
+
+Be friendly and concise in your responses.
+Help the user stay organized and productive.
+help the user to plan there day
 Always provide clear, friendly responses about the results.`,
     });
 }

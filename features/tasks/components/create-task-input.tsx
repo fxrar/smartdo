@@ -2,15 +2,17 @@
 
 import { useState, useRef, KeyboardEvent } from "react";
 import { createTask } from "./actions";
-import { TaskResponse } from "@/features/tasks/types";
+import { TaskResponse, Priority } from "@/features/tasks/types";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar as CalendarIcon, FileText, Plus, Lightbulb, Clock } from "lucide-react";
+import { Calendar as CalendarIcon, FileText, Plus, Lightbulb, Clock, Flag } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { PriorityBadge } from "@/components/ui/priority-badge";
+import { PrioritySelector } from "@/components/ui/priority-selector";
 
 interface CreateTaskInputProps {
     onTaskCreated?: (task: TaskResponse) => void;
@@ -20,11 +22,13 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
     const [title, setTitle] = useState("");
     const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
     const [description, setDescription] = useState("");
+    const [priority, setPriority] = useState<Priority>('NONE');
     const [isLoading, setIsLoading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
     const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
     const [isDescriptionPopoverOpen, setIsDescriptionPopoverOpen] = useState(false);
+    const [isPriorityPopoverOpen, setIsPriorityPopoverOpen] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -40,13 +44,16 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                 title: title.trim(),
                 description: description.trim() || undefined,
                 dueDate: dueDate,
+                priority,
             });
 
             setTitle("");
             setDueDate(undefined);
             setDescription("");
+            setPriority('NONE');
             setIsDatePopoverOpen(false);
             setIsDescriptionPopoverOpen(false);
+            setIsPriorityPopoverOpen(false);
             onTaskCreated?.(newTask);
             toast.success("Task created successfully");
             inputRef.current?.blur();
@@ -232,6 +239,44 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                                     <Button
                                         size="sm"
                                         onClick={() => setIsDescriptionPopoverOpen(false)}
+                                        className="h-8"
+                                    >
+                                        Done
+                                    </Button>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
+                    {/* Priority Button */}
+                    <Popover open={isPriorityPopoverOpen} onOpenChange={setIsPriorityPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <button className="h-7 px-2.5 flex items-center gap-1.5 text-muted-foreground hover:bg-card hover:text-foreground rounded-md text-xs font-medium transition-colors">
+                                <Flag className="w-3.5 h-3.5" />
+                                Priority
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                            className="w-48"
+                            align="start"
+                            onInteractOutside={(e) => {
+                                const target = e.target as HTMLElement;
+                                if (target.closest("[data-radix-popper-content-wrapper]")) {
+                                    e.preventDefault();
+                                }
+                            }}
+                        >
+                            <div className="space-y-3 p-3">
+                                <label className="text-sm font-medium text-foreground">Priority</label>
+                                <PrioritySelector
+                                    value={priority}
+                                    onChange={setPriority}
+                                    disabled={isLoading}
+                                />
+                                <div className="flex justify-end">
+                                    <Button
+                                        size="sm"
+                                        onClick={() => setIsPriorityPopoverOpen(false)}
                                         className="h-8"
                                     >
                                         Done

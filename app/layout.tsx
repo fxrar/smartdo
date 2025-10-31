@@ -28,10 +28,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         attribute="class"
         defaultTheme="system"
         enableSystem
-        disableTransitionOnChange
       >
-        <Sidebar />
-        <main className="flex-1 ml-64">{children}</main>
+        <Sidebar>{children}</Sidebar>
       </ThemeProvider>
 
     </div>

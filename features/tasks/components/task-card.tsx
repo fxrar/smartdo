@@ -7,6 +7,8 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
 import { updateTask } from "./actions";
+import { PriorityBadge } from "@/components/ui/priority-badge";
+import { PrioritySelector } from "@/components/ui/priority-selector";
 
 // Shadcn UI Components
 import { Badge } from "@/components/ui/badge";
@@ -198,6 +200,7 @@ export function TaskCard({
     const [editDueDate, setEditDueDate] = useState<Date | undefined>(
         task?.dueDate ? new Date(task.dueDate) : undefined
     );
+    const [editPriority, setEditPriority] = useState(task?.priority || 'NONE');
 
     const [hasChanges, setHasChanges] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -208,6 +211,7 @@ export function TaskCard({
             setEditTitle(task.title);
             setEditDescription(task.description || "");
             setEditDueDate(task.dueDate ? new Date(task.dueDate) : undefined);
+            setEditPriority(task.priority || 'NONE');
             setHasChanges(false);
         }
     }, [task]);
@@ -221,9 +225,10 @@ export function TaskCard({
         const dateChanged =
             editDueDate?.getTime() !==
             (task.dueDate ? new Date(task.dueDate).getTime() : undefined);
+        const priorityChanged = editPriority !== (task.priority || 'NONE');
 
-        setHasChanges(titleChanged || descChanged || dateChanged);
-    }, [editTitle, editDescription, editDueDate, task]);
+        setHasChanges(titleChanged || descChanged || dateChanged || priorityChanged);
+    }, [editTitle, editDescription, editDueDate, editPriority, task]);
 
     const handleSave = useCallback(async () => {
         if (!task || !editTitle.trim()) {
@@ -237,6 +242,7 @@ export function TaskCard({
                 title: editTitle.trim(),
                 description: editDescription.trim() || undefined,
                 dueDate: editDueDate,
+                priority: editPriority,
             });
 
             onTaskUpdate?.(updatedTask);
@@ -282,11 +288,14 @@ export function TaskCard({
                             placeholder="Task title"
                             className="text-base sm:text-lg md:text-xl font-semibold border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0 h-auto min-h-[44px]"
                         />
-                        {task.done && (
-                            <Badge variant="secondary" className="text-xs">
-                                Completed
-                            </Badge>
-                        )}
+                        <div className="flex items-center gap-2">
+                            <PriorityBadge priority={task.priority} size="sm" />
+                            {task.done && (
+                                <Badge variant="secondary" className="text-xs">
+                                    Completed
+                                </Badge>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -350,6 +359,18 @@ export function TaskCard({
                                 </div>
                             </PopoverContent>
                         </Popover>
+                    </div>
+
+                    {/* Priority Section */}
+                    <div className="space-y-3">
+                        <h2 className="text-xs sm:text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                            Priority
+                        </h2>
+                        <PrioritySelector
+                            value={editPriority}
+                            onChange={setEditPriority}
+                            disabled={isSaving}
+                        />
                     </div>
 
                     <Separator />

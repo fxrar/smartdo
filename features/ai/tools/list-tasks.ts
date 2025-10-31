@@ -23,11 +23,12 @@ export const listTasksTool = tool({
             .number()
             .optional()
             .describe("Maximum number of tasks to return. Defaults to 50"),
+        priority: z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW', 'NONE']).optional().describe("Filter tasks by priority level"),
     }),
 
-    execute: async ({ done, q, limit }) => {
+    execute: async ({ done, q, limit, priority }) => {
         try {
-            const tasks = await getTasks({ done, q, limit });
+            const tasks = await getTasks({ done, q, limit, priority });
 
             return {
                 success: true,
@@ -38,6 +39,7 @@ export const listTasksTool = tool({
                     description: task.description,
                     done: task.done,
                     dueDate: task.dueDate,
+                    priority: task.priority,
                     createdAt: task.createdAt,
                     updatedAt: task.updatedAt,
                 })),

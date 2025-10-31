@@ -7,7 +7,8 @@ import {
     TaskFilters,
     CreateTaskSchema,
     UpdateTaskSchema,
-    TaskFiltersSchema
+    TaskFiltersSchema,
+    Priority
 } from "./types";
 import {
     getAuthenticatedUser,
@@ -31,7 +32,10 @@ export async function createTask(input: CreateTaskInput): Promise<TaskResponse> 
         // Create task
         const task = await prisma.task.create({
             data: {
-                ...validatedInput,
+                title: validatedInput.title,
+                description: validatedInput.description,
+                dueDate: validatedInput.dueDate,
+                priority: (validatedInput.priority as Priority) || ('NONE' as Priority),
                 userId
             }
         });
@@ -94,9 +98,27 @@ export async function updateTask(id: string, input: UpdateTaskInput): Promise<Ta
         const userId = await getAuthenticatedUser();
 
         // Update task - single query instead of updateMany + findUnique
+        const updateData: any = {};
+
+        if (validatedInput.title !== undefined) {
+            updateData.title = validatedInput.title;
+        }
+        if (validatedInput.description !== undefined) {
+            updateData.description = validatedInput.description;
+        }
+        if (validatedInput.dueDate !== undefined) {
+            updateData.dueDate = validatedInput.dueDate;
+        }
+        if (validatedInput.done !== undefined) {
+            updateData.done = validatedInput.done;
+        }
+        if (validatedInput.priority !== undefined) {
+            updateData.priority = validatedInput.priority as Priority;
+        }
+
         const task = await prisma.task.update({
             where: { id },
-            data: validatedInput
+            data: updateData
         });
 
         // Check ownership after update
@@ -162,7 +184,8 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskResponse[
         const {
             done,
             q,
-            limit = 50
+            limit = 50,
+            priority
         } = validatedFilters;
 
         // Build where clause
@@ -170,6 +193,10 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskResponse[
 
         if (done !== undefined) {
             where.done = done;
+        }
+
+        if (priority !== undefined) {
+            where.priority = priority;
         }
 
         // Add search query
@@ -185,6 +212,7 @@ export async function getTasks(filters: TaskFilters = {}): Promise<TaskResponse[
         const tasks = await prisma.task.findMany({
             where,
             orderBy: [
+                { priority: 'asc' },
                 { createdAt: 'desc' }
             ],
             take: limit

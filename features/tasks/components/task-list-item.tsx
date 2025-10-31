@@ -5,6 +5,7 @@ import { TaskResponse } from "@/features/tasks/types";
 import { toggleTaskDone } from "./actions";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { PriorityBadge } from "@/components/ui/priority-badge";
 
 // Shadcn UI Components & Icons
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,8 @@ export function TaskListItem({ task, onTaskClick, onTaskUpdate }: TaskListItemPr
   };
 
   const handleItemClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!event.target.closest('button, [role="checkbox"], [role="menuitem"]')) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('button, [role="checkbox"], [role="menuitem"]')) {
       onTaskClick?.(task);
     }
   };
@@ -104,15 +106,18 @@ export function TaskListItem({ task, onTaskClick, onTaskUpdate }: TaskListItemPr
         />
 
         <div className="flex-1 min-w-0">
-          <motion.h3
-            animate={{
-              textDecoration: optimisticDone ? "line-through" : "none",
-              opacity: optimisticDone ? 0.5 : 1
-            }}
-            className="text-[14px] font-medium leading-snug"
-          >
-            {task.title}
-          </motion.h3>
+          <div className="flex items-center gap-2">
+            <PriorityBadge priority={task.priority} size="sm" />
+            <motion.h3
+              animate={{
+                textDecoration: optimisticDone ? "line-through" : "none",
+                opacity: optimisticDone ? 0.5 : 1
+              }}
+              className="text-[14px] font-medium leading-snug"
+            >
+              {task.title}
+            </motion.h3>
+          </div>
 
           {task.description && task.description.length <= 60 && (
             <p className="text-xs text-muted-foreground/70 truncate mt-0.5">

@@ -50,9 +50,6 @@ export function DeleteTask({ task, isOpen, onClose, onTaskDeleted }: DeleteTaskP
         <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
             <AlertDialogContent
                 className="sm:max-w-md"
-                onPointerDownOutside={(e) => {
-                    e.preventDefault();
-                }}
             >
                 <AlertDialogHeader>
                     <div className="flex items-center gap-3 mb-2">

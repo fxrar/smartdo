@@ -8,7 +8,7 @@ import { updateTask } from "@/features/tasks/actions";
  */
 export const updateTaskTool = tool({
     description:
-        "Update an existing task for the authenticated user. Use this tool when the user wants to modify task details, change the title, description, completion status, or due date.",
+        "Update an existing task for the authenticated user. Use this tool when the user wants to modify task details, change the title, description, completion status, due date, or priority.",
 
     parameters: z.object({
         id: z.string().describe("The unique ID of the task to update"),
@@ -25,15 +25,17 @@ export const updateTaskTool = tool({
             .string()
             .optional()
             .describe("New due date in ISO 8601 format (e.g., '2025-10-20T10:00:00Z')"),
+        priority: z.enum(['URGENT', 'HIGH', 'MEDIUM', 'LOW', 'NONE']).optional().describe("New priority level for the task"),
     }),
 
-    execute: async ({ id, title, description, done, dueDate }) => {
+    execute: async ({ id, title, description, done, dueDate, priority }) => {
         try {
             const task = await updateTask(id, {
                 title,
                 description,
                 done,
                 dueDate: dueDate ? new Date(dueDate) : undefined,
+                priority,
             });
 
             return {
@@ -45,6 +47,7 @@ export const updateTaskTool = tool({
                     description: task.description,
                     done: task.done,
                     dueDate: task.dueDate,
+                    priority: task.priority,
                     updatedAt: task.updatedAt,
                 },
             };

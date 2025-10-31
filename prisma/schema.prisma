@@ -29,10 +29,20 @@ model Task {
   description String?   @db.Text
   dueDate     DateTime?
   done        Boolean   @default(false)
+  priority    Priority  @default(NONE)
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@index([userId])
+  @@index([priority])
+}
+
+enum Priority {
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
+  NONE
 }

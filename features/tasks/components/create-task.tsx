@@ -31,6 +31,7 @@ import { CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { createTask } from "./actions";
 import { toast } from "sonner";
+import { PrioritySelector } from "@/components/ui/priority-selector";
 
 type CreateTaskFormValues = z.infer<typeof CreateTaskSchema>;
 
@@ -49,6 +50,7 @@ export function CreateTask({ open, onOpenChange, onTaskCreated }: CreateTaskProp
             title: "",
             description: "",
             dueDate: undefined,
+            priority: undefined,
         },
     });
 
@@ -60,6 +62,7 @@ export function CreateTask({ open, onOpenChange, onTaskCreated }: CreateTaskProp
                 title: data.title,
                 description: data.description,
                 dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+                priority: data.priority,
             };
 
             const newTask = await createTask(taskData);

@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
             done: searchParams.get("done") === "true" ? true : searchParams.get("done") === "false" ? false : undefined,
             q: searchParams.get("q") || undefined,
             limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined,
+            priority: searchParams.get("priority") as any || undefined,
         };
 
         const tasks = await getTasks(filters);
