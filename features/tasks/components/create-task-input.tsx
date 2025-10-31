@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent, useEffect } from "react";
 import { createTask } from "./actions";
 import { TaskResponse, Priority } from "@/features/tasks/types";
 import { Button } from "@/components/ui/button";
@@ -15,20 +15,18 @@ import {
     Calendar as CalendarIcon,
     Plus,
     Lightbulb,
-    Flag,
+    FileText, // Icon for Description
+    Check, // For marking description as active
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-// We no longer need the 'PrioritySelector' component import
-// import { PrioritySelector } from "@/components/ui/priority-selector";
-import { PriorityIcon } from "@/components/ui/priority-icon"; // Note: Assumes you have this component
+import { PriorityIcon } from "@/components/ui/priority-icon";
 
 interface CreateTaskInputProps {
     onTaskCreated?: (task: TaskResponse) => void;
 }
 
-// Define the priority options for our new list
 const priorityOptions: Priority[] = [
     "URGENT",
     "HIGH",
@@ -37,39 +35,71 @@ const priorityOptions: Priority[] = [
     "NONE",
 ];
 
-// Helper to format priority text nicely
 const formatPriorityText = (priority: Priority) => {
     if (priority === "NONE") return "No Priority";
     return priority.charAt(0) + priority.slice(1).toLowerCase();
 };
 
+// This hook is now used for the POPOVER's textarea
+const useAutosizeTextarea = (
+    textAreaRef: HTMLTextAreaElement | null,
+    value: string
+) => {
+    useEffect(() => {
+        if (textAreaRef) {
+            // Set a min-height for the popover textarea
+            const minHeight = 80; // approx 4 lines
+            textAreaRef.style.height = `${minHeight}px`; // Start at min-height
+
+            const newHeight = Math.max(textAreaRef.scrollHeight, minHeight);
+
+            textAreaRef.style.height = `${newHeight}px`;
+
+            if (textAreaRef.scrollHeight > newHeight) {
+                textAreaRef.style.overflowY = "auto";
+            } else {
+                textAreaRef.style.overflowY = "hidden";
+            }
+        }
+    }, [textAreaRef, value]);
+};
+
+
 export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
     const [title, setTitle] = useState("");
     const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
-    const [description, setDescription] = useState("");
     const [priority, setPriority] = useState<Priority>("NONE");
     const [isLoading, setIsLoading] = useState(false);
     const [isFocused, setIsFocused] = useState(false);
 
+    // STATE MANAGEMENT FOR DESCRIPTION
+    const [description, setDescription] = useState("");
+    const [tempDescription, setTempDescription] = useState(""); // For editing in the popover
+
     const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
     const [isPriorityPopoverOpen, setIsPriorityPopoverOpen] = useState(false);
+    const [isDescriptionPopoverOpen, setIsDescriptionPopoverOpen] = useState(false);
 
     const inputRef = useRef<HTMLInputElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const popoverTextareaRef = useRef<HTMLTextAreaElement>(null);
 
-    /**
-     * Resets all form fields and collapses the input.
-     */
+    // Use the hook on the POPOVER's textarea
+    useAutosizeTextarea(popoverTextareaRef.current, tempDescription);
+
+
     const handleReset = () => {
         setTitle("");
         setDueDate(undefined);
         setDescription("");
+        setTempDescription("");
         setPriority("NONE");
         setIsFocused(false);
         setIsDatePopoverOpen(false);
         setIsPriorityPopoverOpen(false);
-        inputRef.current?.blur();
-        textareaRef.current?.blur();
+        setIsDescriptionPopoverOpen(false);
+        setTimeout(() => {
+            inputRef.current?.blur();
+        }, 0);
     };
 
     const handleSubmit = async () => {
@@ -83,14 +113,14 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
         try {
             const newTask = await createTask({
                 title: title.trim(),
-                description: description.trim() || undefined,
+                description: description.trim() || undefined, // Use the committed description
                 dueDate: dueDate,
                 priority,
             });
 
             toast.success("Task created successfully");
             onTaskCreated?.(newTask);
-            handleReset(); // Reset and collapse on success
+            handleReset();
         } catch (error) {
             console.error("Failed to create task:", error);
             toast.error("Failed to create task");
@@ -99,65 +129,95 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
         }
     };
 
-    /**
-     * Handles Cmd/Ctrl + Enter submission from both title and description fields.
-     */
     const handleKeyDown = (
         e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
-        if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        // Only submit from the main title input
+        if (e.currentTarget.id === "main-task-title" && e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
             handleSubmit();
         }
+
+        // Allow Ctrl+Enter to save from description popover
+        if (e.currentTarget.id === "description-textarea" && e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            handleSaveDescription();
+        }
     };
+
+    const handleFocus = (e: React.FocusEvent<HTMLDivElement>) => {
+        if (e.target === inputRef.current) {
+            setIsFocused(true);
+        }
+    }
+
+    // NEW: Save description from popover to main state
+    const handleSaveDescription = () => {
+        setDescription(tempDescription);
+        setIsDescriptionPopoverOpen(false);
+    };
+
+    // NEW: Open popover handler
+    const onOpenDescriptionPopover = (open: boolean) => {
+        if (open) {
+            // When opening, sync temp state with main state
+            setTempDescription(description);
+            // Focus the textarea when popover opens
+            setTimeout(() => {
+                popoverTextareaRef.current?.focus();
+            }, 100);
+        }
+        setIsDescriptionPopoverOpen(open);
+    }
+
 
     return (
         <div
+            onFocusCapture={handleFocus}
+            onBlurCapture={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setIsFocused(false);
+                }
+            }}
             className={cn(
-                "w-full rounded-xl border bg-card transition-all",
-                // Apply a subtle ring when focused to match the aesthetic
-                isFocused ? "border-primary/50 ring-2 ring-primary/10" : "border-border"
+                "w-full rounded-xl border bg-card transition-all relative",
+                isFocused ? "border-primary/50 ring-2 ring-primary/10" : "border-border hover:border-muted-foreground/30"
             )}
         >
-            {/* --- Main Input Area --- */}
+            {/* --- Main Input Area (TITLE ONLY) --- */}
             <div className="p-4">
                 <div className="flex items-start gap-3">
-                    <Plus className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-[5px]" />
-                    <div className="flex-1 space-y-2">
+                    <Plus className={cn(
+                        "w-4 h-4 text-muted-foreground flex-shrink-0 mt-[5px] transition-opacity",
+                        isFocused ? "opacity-30" : "opacity-100"
+                    )} />
+
+                    <div className="flex-1">
                         <input
+                            id="main-task-title"
                             ref={inputRef}
                             type="text"
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            onFocus={() => setIsFocused(true)}
                             placeholder="What needs to be done?"
                             disabled={isLoading}
                             className="w-full text-sm font-medium text-foreground placeholder:text-muted-foreground bg-transparent focus:outline-none disabled:opacity-50"
                         />
-
-                        {/* --- Expanded Area (Description) --- */}
-                        {isFocused && (
-                            <div className="animate-in fade-in-0 slide-in-from-top-2 duration-200">
-                                <Textarea
-                                    ref={textareaRef}
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    onKeyDown={handleKeyDown} // Allow submit from textarea
-                                    onFocus={() => setIsFocused(true)}
-                                    placeholder="Add a description..."
-                                    className="min-h-[60px] w-full resize-none border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 shadow-none text-sm text-muted-foreground"
-                                />
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
 
-            {/* --- Actions Bar --- */}
-            <div className="flex items-center justify-between px-4 py-2.5 bg-muted/50 border-t border-border">
+            {/* --- Actions Bar (ALWAYS VISIBLE) --- */}
+            <div
+                className={cn(
+                    "flex items-center justify-between px-4 py-2.5 bg-muted/50 border-t border-border/50",
+                    "rounded-b-xl"
+                )}
+            >
                 {/* Left Actions */}
                 <div className="flex items-center gap-1">
+
                     {/* Date Picker Button */}
                     <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
                         <PopoverTrigger asChild>
@@ -166,8 +226,9 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                                 size="sm"
                                 className={cn(
                                     "h-7 px-2.5 gap-1.5 text-xs font-medium",
-                                    dueDate ? "text-primary" : "text-muted-foreground"
+                                    dueDate ? "text-primary hover:text-primary/80 bg-background/50" : "text-muted-foreground"
                                 )}
+                                onMouseDown={(e) => e.preventDefault()}
                             >
                                 <CalendarIcon className="w-3.5 h-3.5" />
                                 {dueDate ? format(dueDate, "MMM d") : "Date"}
@@ -179,7 +240,7 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                                 selected={dueDate}
                                 onSelect={(date) => {
                                     setDueDate(date);
-                                    setIsDatePopoverOpen(false); // Close on select
+                                    setIsDatePopoverOpen(false);
                                 }}
                                 disabled={(date) =>
                                     date < new Date(new Date().setHours(0, 0, 0, 0))
@@ -201,15 +262,15 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                                 className={cn(
                                     "h-7 px-2.5 gap-1.5 text-xs font-medium",
                                     priority !== "NONE"
-                                        ? "text-foreground"
+                                        ? "text-foreground hover:text-foreground/80 bg-background/50"
                                         : "text-muted-foreground"
                                 )}
+                                onMouseDown={(e) => e.preventDefault()}
                             >
                                 <PriorityIcon priority={priority} className="w-3.5 h-3.5" />
                                 {priority === "NONE" ? "Priority" : formatPriorityText(priority)}
                             </Button>
                         </PopoverTrigger>
-                        {/* --- UPDATED POPOVER CONTENT --- */}
                         <PopoverContent className="w-48 p-2" align="start">
                             <div className="flex flex-col gap-1">
                                 {priorityOptions.map((p) => (
@@ -235,11 +296,67 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
                         </PopoverContent>
                     </Popover>
 
+                    {/* NEW: Description Button is now a PopoverTrigger */}
+                    <Popover open={isDescriptionPopoverOpen} onOpenChange={onOpenDescriptionPopover}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className={cn(
+                                    "h-7 px-2.5 gap-1.5 text-xs font-medium",
+                                    description.trim()
+                                        ? "text-foreground hover:text-foreground/80 bg-background/50"
+                                        : "text-muted-foreground"
+                                )}
+                                onMouseDown={(e) => e.preventDefault()} // Prevent main component blur
+                            >
+                                {description.trim() ? (
+                                    <Check className="w-3.5 h-3.5 text-green-500" />
+                                ) : (
+                                    <FileText className="w-3.5 h-3.5" />
+                                )}
+                                {description.trim() ? "Edit Description" : "Add Description"}
+                            </Button>
+                        </PopoverTrigger>
+
+                        {/* NEW: Description Popover Content */}
+                        <PopoverContent className="w-80 p-4" align="start">
+                            <div className="space-y-4">
+                                <label className="text-sm font-medium">Description</label>
+                                <Textarea
+                                    id="description-textarea"
+                                    ref={popoverTextareaRef}
+                                    value={tempDescription}
+                                    // 💡💡💡 FIX: Was e.t.value, changed to e.target.value
+                                    onChange={(e) => setTempDescription(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder="Add a detailed description..."
+                                    className="w-full resize-none focus-visible:ring-1 focus-visible:ring-offset-0 p-2 shadow-sm text-sm border"
+                                    rows={4} // Default min-height
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setIsDescriptionPopoverOpen(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button type="button" size="sm" onClick={handleSaveDescription}>
+                                        Save
+                                    </Button>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+
                     {/* AI Refine Button */}
                     <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 px-2.5 gap-1.5 text-xs font-medium text-muted-foreground"
+                        disabled
                     >
                         <Lightbulb className="w-3.5 h-3.5" />
                         AI
@@ -248,47 +365,32 @@ export function CreateTaskInput({ onTaskCreated }: CreateTaskInputProps) {
 
                 {/* Right Actions */}
                 <div className="flex items-center gap-2">
-                    {/* Show "Cancel" only when expanded */}
-                    {isFocused ? (
-                        <>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleReset}
-                                className="h-7 px-3 text-xs"
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={isLoading || !title.trim()}
-                                className="h-7 px-3 text-xs"
-                            >
-                                {isLoading ? "Creating..." : "Add Task"}
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            {/* Keyboard Hint */}
-                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                                <kbd className="px-1.5 py-0.5 bg-card border border-border rounded text-[10px] font-medium">
-                                    ⌘
-                                </kbd>
-                                <kbd className="px-1.5 py-0.5 bg-card border border-border rounded text-[10px] font-medium">
-                                    Enter
-                                </kbd>
-                            </div>
-
-                            {/* Submit Button */}
-                            <Button
-                                onClick={handleSubmit}
-                                disabled={isLoading || !title.trim()}
-                                className="h-7 px-3 text-xs"
-                            >
-                                Add Task
-                            </Button>
-                        </>
+                    {(title.trim() || description.trim() || dueDate || priority !== "NONE") && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleReset}
+                            className="h-7 px-3 text-xs"
+                        >
+                            Cancel
+                        </Button>
                     )}
+
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={isLoading || !title.trim()}
+                        className="h-7 px-3 text-xs gap-1"
+                    >
+                        {isLoading ? "Creating..." : "Add Task"}
+                        <div className="flex items-center gap-0.5 text-[10px] text-primary-foreground/70 ml-1">
+                            <kbd className="px-1 py-0.5 bg-card/20 border border-primary/20 rounded font-medium">
+                                ⌘
+                            </kbd>
+                            <kbd className="px-1 py-0.5 bg-card/20 border border-primary/20 rounded font-medium">
+                                ↩
+                            </kbd>
+                        </div>
+                    </Button>
                 </div>
             </div>
         </div>
