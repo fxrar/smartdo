@@ -254,7 +254,7 @@ export function TaskCard({
         } finally {
             setIsSaving(false);
         }
-    }, [task, editTitle, editDescription, editDueDate, onTaskUpdate]);
+    }, [task, editTitle, editDescription, editDueDate, editPriority, onTaskUpdate]);
 
     if (!task) return null;
 

@@ -1,19 +1,23 @@
-// components/sidebar.tsx - MOBILE RESPONSIVE
+// components/sidebar.tsx - MOBILE RESPONSIVE WITH CUSTOM ACCOUNT
 "use client";
 
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useUser } from "@clerk/nextjs";
+import { useClerk } from "@clerk/nextjs";
 import {
     LayoutList,
     CalendarDays,
     CalendarClock,
     LayoutGrid,
-    Settings,
     Moon,
     Sun,
     MessageSquare,
+    LogOut,
+    User,
+    ChevronDown,
 } from "lucide-react";
 
 import {
@@ -38,6 +42,64 @@ const mainNavigation = [
     { name: "Today", href: "/tasks/today", icon: CalendarDays },
     { name: "Upcoming", href: "/tasks/upcoming", icon: CalendarClock },
 ];
+
+function AccountDropdown() {
+    const { user } = useUser();
+    const { signOut } = useClerk();
+    const [isOpen, setIsOpen] = React.useState(false);
+
+    const handleSignOut = async () => {
+        await signOut({ redirectUrl: "/" });
+    };
+
+    if (!user) return null;
+
+    const userInitials = user.firstName
+        ? `${user.firstName.charAt(0)}${user.lastName?.charAt(0) || ""}`
+        : "U";
+
+    return (
+        <div className="relative">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md hover:bg-accent transition-colors"
+            >
+                <div className="flex items-center justify-center size-8 rounded-full bg-primary text-primary-foreground text-xs font-semibold flex-shrink-0">
+                    {userInitials}
+                </div>
+                <div className="flex-1 text-left min-w-0">
+                    <p className="text-sm font-medium truncate">
+                        {user.firstName || user.emailAddresses[0]?.emailAddress?.split("@")[0]}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">
+                        {user.emailAddresses[0]?.emailAddress}
+                    </p>
+                </div>
+                <ChevronDown className="size-4 flex-shrink-0 opacity-50" />
+            </button>
+
+            {isOpen && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-popover border rounded-md shadow-lg z-50 min-w-[200px]">
+                    <Link
+                        href="/account"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-accent text-sm transition-colors border-b"
+                    >
+                        <User className="size-4" />
+                        <span>Account Settings</span>
+                    </Link>
+                    <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-2 w-full px-3 py-2 hover:bg-accent text-sm text-destructive hover:text-destructive transition-colors"
+                    >
+                        <LogOut className="size-4" />
+                        <span>Sign Out</span>
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
 
 function AppSidebar({ isChatOpen, toggleChat }: { isChatOpen: boolean; toggleChat: () => void }) {
     const pathname = usePathname();
@@ -107,12 +169,7 @@ function AppSidebar({ isChatOpen, toggleChat }: { isChatOpen: boolean; toggleCha
                         </SidebarMenuItem>
                     )}
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                            <Link href="/settings">
-                                <Settings />
-                                <span>Settings</span>
-                            </Link>
-                        </SidebarMenuButton>
+                        <AccountDropdown />
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
